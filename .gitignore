@@ -11,8 +11,7 @@
 **/dist-ssr
 
 # Uploads (runtime user content)
-server/uploads/*
-!server/uploads/.gitkeep
+server/uploads/
 
 # Logs
 **/logs
