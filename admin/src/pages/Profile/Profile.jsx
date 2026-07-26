@@ -1,14 +1,16 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import { Eye, EyeOff, Save, User } from "lucide-react";
 
 import { api } from "../../api/axios";
 import { selectAdmin } from "../../features/auth/authSelectors";
-import { fetchAdminProfile } from "../../features/auth/authSlice";
+import { logout } from "../../features/auth/authSlice";
 
 const Profile = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const admin = useSelector(selectAdmin);
 
   const [email, setEmail] = useState(admin?.email || "");
@@ -34,10 +36,11 @@ const Profile = () => {
         newPassword: newPassword.trim() || undefined,
       });
 
-      toast.success("Profile updated successfully");
-      setCurrentPassword("");
-      setNewPassword("");
-      dispatch(fetchAdminProfile());
+      // Email/password change invalidates the session on every device,
+      // including this one — send the admin back to login immediately.
+      toast.success("Profile updated. Please login again.");
+      dispatch(logout());
+      navigate("/login", { replace: true });
     } catch (error) {
       toast.error(error?.response?.data?.message || "Profile update failed");
     } finally {

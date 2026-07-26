@@ -6,6 +6,7 @@ import {
   FaSignOutAlt,
   FaSearch,
   FaUsers,
+  FaUserAlt,
   FaUserCircle,
   FaTimes,
   FaChevronDown,
@@ -91,7 +92,18 @@ const Sidebar = () => {
 
   const userItems = useMemo(
     () => [
-      { key: "all-users", to: "/all-users", icon: <FaUsers />, text: "Users" },
+      {
+        key: "all-users",
+        to: "/all-users",
+        icon: <FaUsers />,
+        text: "Studio Users",
+      },
+      {
+        key: "normal-users",
+        to: "/normal-users",
+        icon: <FaUserAlt />,
+        text: "Normal Users",
+      },
     ],
     [],
   );
@@ -389,7 +401,7 @@ const Sidebar = () => {
                 />
               )}
 
-              {visibleDepositItems.length > 0 && (
+              {/* {visibleDepositItems.length > 0 && (
                 <DropdownSection
                   title="Deposit"
                   icon={<FaWallet />}
@@ -398,8 +410,9 @@ const Sidebar = () => {
                   items={visibleDepositItems}
                   onClose={() => setOpen(false)}
                 />
-              )}
+              )} */}
 
+{/*               
               {visibleWithdrawItems.length > 0 && (
                 <DropdownSection
                   title="Withdraw"
@@ -409,7 +422,7 @@ const Sidebar = () => {
                   items={visibleWithdrawItems}
                   onClose={() => setOpen(false)}
                 />
-              )}
+              )} */}
 
               {visibleContentItems.length > 0 && (
                 <DropdownSection

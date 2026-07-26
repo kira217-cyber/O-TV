@@ -4,6 +4,8 @@ import { NavLink } from "react-router";
 import { A11y, FreeMode, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
+import { alignHoverPreview } from "../../utils/alignHoverPreview";
+
 import "swiper/css";
 import "swiper/css/free-mode";
 
@@ -318,7 +320,17 @@ const Football = () => {
             >
               {footballItems.map((item, index) => (
                 <SwiperSlide key={item.id} className="football-card-slide">
-                  <div className="group/card relative w-full cursor-pointer">
+                  <div
+                    className="group/card relative w-full cursor-pointer"
+                    onMouseEnter={(event) =>
+                      alignHoverPreview(
+                        event,
+                        ".football-slider-boundary",
+                        ".football-hover-preview",
+                        385,
+                      )
+                    }
+                  >
                     {/* Normal portrait card */}
                     <NavLink
                       to={item.path}
@@ -352,7 +364,7 @@ const Football = () => {
                     </NavLink>
 
                     {/* Desktop hover preview */}
-                    <div className="pointer-events-none absolute bottom-[-4px] left-1/2 z-[9999] hidden w-[385px] -translate-x-1/2 translate-y-3 overflow-hidden rounded-[11px] border border-white/15 bg-[#182022] opacity-0 shadow-[0_18px_50px_rgba(0,0,0,0.75)] transition-all duration-300 group-hover/card:pointer-events-auto group-hover/card:translate-y-0 group-hover/card:opacity-100 lg:block">
+                    <div className="football-hover-preview pointer-events-none absolute bottom-[-4px] left-1/2 z-[9999] hidden w-[385px] -translate-x-1/2 translate-y-3 overflow-hidden rounded-[11px] border border-white/15 bg-[#182022] opacity-0 shadow-[0_18px_50px_rgba(0,0,0,0.75)] transition-all duration-300 group-hover/card:pointer-events-auto group-hover/card:translate-y-0 group-hover/card:opacity-100 lg:block">
                       <NavLink
                         to={item.path}
                         className="relative block h-[216px] w-full cursor-pointer overflow-hidden bg-[#101517]"

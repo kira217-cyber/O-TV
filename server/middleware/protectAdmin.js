@@ -19,9 +19,20 @@ export const protectAdmin = async (req, res, next) => {
       return errorResponse(res, "Not authorized, admin not found", 401);
     }
 
+    if (
+      typeof decoded.tokenVersion === "number" &&
+      decoded.tokenVersion !== (admin.tokenVersion || 0)
+    ) {
+      return errorResponse(res, "Session expired, please login again", 401);
+    }
+
     req.admin = admin;
     next();
   } catch (error) {
+    if (error?.name === "TokenExpiredError") {
+      return errorResponse(res, "Session expired, please login again", 401);
+    }
+
     return errorResponse(res, "Not authorized, token invalid", 401);
   }
 };

@@ -8,6 +8,8 @@ import CreateAdmin from "../pages/CreateAdmin/CreateAdmin";
 import NotFoundPage from "../pages/NotFoundPage/NotFoundPage";
 
 import AllUsers from "../pages/AllUsers/AllUsers";
+import UserDetails from "../pages/UserDetails/UserDetails";
+import NormalUsers from "../pages/NormalUsers/NormalUsers";
 
 import DepositMethods from "../pages/DepositMethods/DepositMethods";
 import DepositRequests from "../pages/DepositRequests/DepositRequests";
@@ -76,6 +78,14 @@ export const routes = createBrowserRouter([
       },
 
       { path: "all-users", element: wrap("all-users", AllUsers) },
+      {
+        path: "all-users/:id",
+        element: wrap("all-users", UserDetails),
+      },
+      {
+        path: "normal-users",
+        element: wrap("normal-users", NormalUsers),
+      },
 
       {
         path: "deposit-methods",

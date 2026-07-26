@@ -92,8 +92,9 @@ router.post("/login", async (req, res) => {
         id: admin._id,
         email: admin.email,
         role: admin.role,
+        tokenVersion: admin.tokenVersion || 0,
       },
-      "30d",
+      "1d",
     );
 
     return successResponse(res, "Login successful", {
@@ -182,6 +183,10 @@ router.put("/profile", protectAdmin, async (req, res) => {
 
       admin.password = await bcrypt.hash(newPassword.trim(), 10);
     }
+
+    // Email or password change invalidates every previously issued token,
+    // forcing a fresh login on this device and all other logged-in devices.
+    admin.tokenVersion = (admin.tokenVersion || 0) + 1;
 
     await admin.save();
 
@@ -287,6 +292,8 @@ router.put("/admins/:id", protectAdmin, requireMother, async (req, res) => {
       return errorResponse(res, "Admin not found", 404);
     }
 
+    let shouldBumpTokenVersion = false;
+
     if (typeof email === "string" && email.trim() !== "") {
       const normalizedEmail = email.toLowerCase().trim();
 
@@ -296,7 +303,10 @@ router.put("/admins/:id", protectAdmin, requireMother, async (req, res) => {
         return errorResponse(res, "Email already in use by another admin", 409);
       }
 
-      target.email = normalizedEmail;
+      if (normalizedEmail !== target.email) {
+        target.email = normalizedEmail;
+        shouldBumpTokenVersion = true;
+      }
     }
 
     if (typeof role === "string") {
@@ -321,6 +331,13 @@ router.put("/admins/:id", protectAdmin, requireMother, async (req, res) => {
       }
 
       target.password = await bcrypt.hash(newPassword.trim(), 10);
+      shouldBumpTokenVersion = true;
+    }
+
+    if (shouldBumpTokenVersion) {
+      // Force this admin to re-login on every device where they're
+      // currently signed in, since their credentials just changed.
+      target.tokenVersion = (target.tokenVersion || 0) + 1;
     }
 
     await target.save();

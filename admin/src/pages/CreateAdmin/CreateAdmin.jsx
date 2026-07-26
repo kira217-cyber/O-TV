@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import {
   Eye,
@@ -13,13 +15,19 @@ import {
 } from "lucide-react";
 
 import { api } from "../../api/axios";
+import { selectAdmin } from "../../features/auth/authSelectors";
+import { logout } from "../../features/auth/authSlice";
 
 const CreateAdmin = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const currentAdmin = useSelector(selectAdmin);
   const allPerms = useMemo(
     () => [
       { key: "dashboard", label: "Dashboard", path: "/" },
 
-      { key: "all-users", label: "Users", path: "/all-users" },
+      { key: "all-users", label: "Studio Users", path: "/all-users" },
+      { key: "normal-users", label: "Normal Users", path: "/normal-users" },
 
       {
         key: "deposit-methods",
@@ -238,6 +246,18 @@ const CreateAdmin = () => {
       }
 
       await api.put(`/api/admin/admins/${id}`, payload);
+
+      const editedSelf = String(id) === String(currentAdmin?.id);
+      const credentialsChanged = Boolean(payload.email || payload.newPassword);
+
+      if (editedSelf && credentialsChanged) {
+        // Own email/password just changed — the server invalidated this
+        // session too, so send this device back to login as well.
+        toast.success("Admin updated. Please login again.");
+        dispatch(logout());
+        navigate("/login", { replace: true });
+        return;
+      }
 
       toast.success("Admin updated successfully");
       cancelEdit();

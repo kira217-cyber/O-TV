@@ -11,6 +11,8 @@ import { NavLink } from "react-router";
 import { A11y, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
+import { alignHoverPreview } from "../../utils/alignHoverPreview";
+
 import "swiper/css";
 
 const ottPlatforms = [
@@ -300,7 +302,17 @@ const AllOTTPlatForms = () => {
           >
             {displayedMovies.map((movie, index) => (
               <SwiperSlide key={movie.displayId} className="ott-content-slide">
-                <div className="group/card relative w-full cursor-pointer">
+                <div
+                  className="group/card relative w-full cursor-pointer"
+                  onMouseEnter={(event) =>
+                    alignHoverPreview(
+                      event,
+                      ".ott-slider-boundary",
+                      ".ott-hover-preview",
+                      385,
+                    )
+                  }
+                >
                   {/* Normal movie card */}
                   <NavLink
                     to={movie.path}
@@ -352,7 +364,7 @@ const AllOTTPlatForms = () => {
                   {/* ======================================
                       DESKTOP HOVER PREVIEW
                   ====================================== */}
-                  <div className="pointer-events-none absolute bottom-[-4px] left-1/2 z-[9999] hidden w-[385px] -translate-x-1/2 translate-y-3 overflow-hidden rounded-[11px] border border-white/15 bg-[#182022] opacity-0 shadow-[0_18px_50px_rgba(0,0,0,0.75)] transition-all duration-300 group-hover/card:pointer-events-auto group-hover/card:translate-y-0 group-hover/card:opacity-100 lg:block">
+                  <div className="ott-hover-preview pointer-events-none absolute bottom-[-4px] left-1/2 z-[9999] hidden w-[385px] -translate-x-1/2 translate-y-3 overflow-hidden rounded-[11px] border border-white/15 bg-[#182022] opacity-0 shadow-[0_18px_50px_rgba(0,0,0,0.75)] transition-all duration-300 group-hover/card:pointer-events-auto group-hover/card:translate-y-0 group-hover/card:opacity-100 lg:block">
                     {/* Hover landscape image */}
                     <NavLink
                       to={movie.path}

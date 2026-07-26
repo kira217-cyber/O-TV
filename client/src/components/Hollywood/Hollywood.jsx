@@ -4,6 +4,8 @@ import { NavLink, useNavigate } from "react-router";
 import { A11y, FreeMode, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
+import { alignHoverPreview } from "../../utils/alignHoverPreview";
+
 import "swiper/css";
 import "swiper/css/free-mode";
 
@@ -255,7 +257,17 @@ const Hollywood = () => {
           >
             {hollywoodMovies.map((movie, index) => (
               <SwiperSlide key={movie.id} className="hollywood-slide">
-                <div className="group/movie relative w-full cursor-pointer">
+                <div
+                  className="group/movie relative w-full cursor-pointer"
+                  onMouseEnter={(event) =>
+                    alignHoverPreview(
+                      event,
+                      ".hollywood-slider-boundary",
+                      ".hollywood-hover-preview",
+                      385,
+                    )
+                  }
+                >
                   {/* Normal card */}
                   <NavLink
                     to={movie.path}

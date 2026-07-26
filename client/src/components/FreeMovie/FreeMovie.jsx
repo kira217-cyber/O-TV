@@ -4,6 +4,8 @@ import { NavLink, useNavigate } from "react-router";
 import { A11y, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
+import { alignHoverPreview } from "../../utils/alignHoverPreview";
+
 import "swiper/css";
 
 const FREE_MOVIE_DESKTOP_BACKGROUND =
@@ -216,7 +218,17 @@ const FreeMovie = () => {
           >
             {freeMovies.map((movie, index) => (
               <SwiperSlide key={movie.id} className="free-movie-slide">
-                <div className="group/movie relative w-full cursor-pointer">
+                <div
+                  className="group/movie relative w-full cursor-pointer"
+                  onMouseEnter={(event) =>
+                    alignHoverPreview(
+                      event,
+                      ".free-movie-slider-boundary",
+                      ".free-movie-hover-preview",
+                      385,
+                    )
+                  }
+                >
                   {/* Normal card */}
                   <NavLink
                     to={movie.path}

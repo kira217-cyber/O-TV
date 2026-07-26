@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 
 import adminRoutes from "./routes/adminRoutes.js";
+import studioRoutes from "./routes/studioRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 dotenv.config();
 
@@ -22,6 +24,8 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/admin", adminRoutes);
+app.use("/api/admin/users", userRoutes);
+app.use("/api/studio", studioRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });

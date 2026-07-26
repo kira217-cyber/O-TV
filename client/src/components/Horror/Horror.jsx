@@ -4,6 +4,8 @@ import { NavLink, useNavigate } from "react-router";
 import { A11y, FreeMode, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
+import { alignHoverPreview } from "../../utils/alignHoverPreview";
+
 import "swiper/css";
 import "swiper/css/free-mode";
 
@@ -280,7 +282,17 @@ const Horror = () => {
           >
             {horrorItems.map((item, index) => (
               <SwiperSlide key={item.id} className="horror-card-slide">
-                <div className="group/card relative w-full cursor-pointer">
+                <div
+                  className="group/card relative w-full cursor-pointer"
+                  onMouseEnter={(event) =>
+                    alignHoverPreview(
+                      event,
+                      ".horror-slider-boundary",
+                      ".horror-hover-preview",
+                      385,
+                    )
+                  }
+                >
                   {/* Normal portrait card */}
                   <NavLink
                     to={item.path}

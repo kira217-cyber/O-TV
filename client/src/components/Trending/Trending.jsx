@@ -4,6 +4,8 @@ import { NavLink } from "react-router";
 import { A11y, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
+import { alignHoverPreview } from "../../utils/alignHoverPreview";
+
 import "swiper/css";
 
 const images = [
@@ -238,7 +240,17 @@ const Trending = () => {
           >
             {trendingItems.map((item, index) => (
               <SwiperSlide key={item.id} className="trending-card-slide">
-                <div className="group/card relative w-full cursor-pointer">
+                <div
+                  className="group/card relative w-full cursor-pointer"
+                  onMouseEnter={(event) =>
+                    alignHoverPreview(
+                      event,
+                      ".trending-slider-boundary",
+                      ".trending-hover-preview",
+                      385,
+                    )
+                  }
+                >
                   {/* Normal card */}
                   <NavLink
                     to={item.path}
@@ -280,7 +292,7 @@ const Trending = () => {
                   {/* =========================================
                       DESKTOP HOVER PREVIEW
                   ========================================= */}
-                  <div className="pointer-events-none absolute bottom-[-4px] left-1/2 z-[100] hidden w-[385px] -translate-x-1/2 translate-y-3 overflow-hidden rounded-[11px] border border-white/15 bg-[#182022] opacity-0 shadow-[0_18px_50px_rgba(0,0,0,0.65)] transition-all duration-300 group-hover/card:pointer-events-auto group-hover/card:translate-y-0 group-hover/card:opacity-100 lg:block">
+                  <div className="trending-hover-preview pointer-events-none absolute bottom-[-4px] left-1/2 z-[100] hidden w-[385px] -translate-x-1/2 translate-y-3 overflow-hidden rounded-[11px] border border-white/15 bg-[#182022] opacity-0 shadow-[0_18px_50px_rgba(0,0,0,0.65)] transition-all duration-300 group-hover/card:pointer-events-auto group-hover/card:translate-y-0 group-hover/card:opacity-100 lg:block">
                     {/* Preview landscape image */}
                     <NavLink
                       to={item.path}
