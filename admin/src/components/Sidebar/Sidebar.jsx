@@ -22,6 +22,7 @@ import {
   FaImage,
   FaFilm,
   FaGlobe,
+  FaVideo,
 } from "react-icons/fa";
 import { FaNotesMedical } from "react-icons/fa6";
 import { IoFootstepsOutline } from "react-icons/io5";
@@ -79,6 +80,12 @@ const Sidebar = () => {
         icon: <FaHome />,
         text: "Dashboard",
         end: true,
+      },
+      {
+        key: "videos",
+        to: "/videos",
+        icon: <FaVideo />,
+        text: "Video Approvals",
       },
       {
         key: "__mother__",

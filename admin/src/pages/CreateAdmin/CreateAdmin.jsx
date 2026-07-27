@@ -28,6 +28,7 @@ const CreateAdmin = () => {
 
       { key: "all-users", label: "Studio Users", path: "/all-users" },
       { key: "normal-users", label: "Normal Users", path: "/normal-users" },
+      { key: "videos", label: "Video Approvals", path: "/videos" },
 
       {
         key: "deposit-methods",

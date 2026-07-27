@@ -7,6 +7,7 @@ import Dashboard from "../pages/Dashboard/Dashboard";
 import MyChannel from "../pages/MyChannel/MyChannel";
 import MyVideos from "../pages/MyVideos/MyVideos";
 import UploadVideo from "../pages/UploadVideo/UploadVideo";
+import EditVideo from "../pages/EditVideo/EditVideo";
 import Profile from "../pages/Profile/Profile";
 import NotFoundPage from "../pages/NotFoundPage/NotFoundPage";
 
@@ -49,6 +50,14 @@ export const routes = createBrowserRouter([
         element: (
           <PrivateRoute>
             <UploadVideo />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: "edit-video/:id",
+        element: (
+          <PrivateRoute>
+            <EditVideo />
           </PrivateRoute>
         ),
       },

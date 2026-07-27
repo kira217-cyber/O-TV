@@ -11,6 +11,9 @@ import AllUsers from "../pages/AllUsers/AllUsers";
 import UserDetails from "../pages/UserDetails/UserDetails";
 import NormalUsers from "../pages/NormalUsers/NormalUsers";
 
+import Videos from "../pages/Videos/Videos";
+import VideoDetails from "../pages/VideoDetails/VideoDetails";
+
 import DepositMethods from "../pages/DepositMethods/DepositMethods";
 import DepositRequests from "../pages/DepositRequests/DepositRequests";
 
@@ -86,6 +89,9 @@ export const routes = createBrowserRouter([
         path: "normal-users",
         element: wrap("normal-users", NormalUsers),
       },
+
+      { path: "videos", element: wrap("videos", Videos) },
+      { path: "videos/:id", element: wrap("videos", VideoDetails) },
 
       {
         path: "deposit-methods",

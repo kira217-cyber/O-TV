@@ -1,13 +1,14 @@
+import "./config/env.js";
+
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 
 import adminRoutes from "./routes/adminRoutes.js";
 import studioRoutes from "./routes/studioRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
-
-dotenv.config();
+import videoRoutes from "./routes/videoRoutes.js";
+import adminVideoRoutes from "./routes/adminVideoRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,7 +26,9 @@ app.get("/", (req, res) => {
 
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin/users", userRoutes);
+app.use("/api/admin/videos", adminVideoRoutes);
 app.use("/api/studio", studioRoutes);
+app.use("/api/studio/videos", videoRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
