@@ -1,11 +1,22 @@
 import React from "react";
 
-const ADS_IMAGE_URL2 =
+import { api } from "../../api/axios";
+import { useSiteSettings } from "../../hooks/useSiteSettings";
+
+const DEFAULT_ADS_IMAGE_URL =
   "https://asset.bioscopelive.com/uploads/images/2026/05/17/images_900c7e7c53593f400a244d99cd748ef0_goplay_bkash.png?w=1800";
 
 const AdsImage2 = () => {
+  const { settings } = useSiteSettings();
+  const ads = settings?.ads?.ads2;
+
+  const adsImageUrl = ads?.image
+    ? `${api.defaults.baseURL}${ads.image}`
+    : DEFAULT_ADS_IMAGE_URL;
+
   const handleAdsClick = () => {
-    console.log("Advertisement clicked");
+    if (!ads?.url) return;
+    window.open(ads.url, ads.openInNewTab === false ? "_self" : "_blank", "noreferrer");
   };
 
   return (
@@ -18,8 +29,8 @@ const AdsImage2 = () => {
           className="group relative block h-[115px] w-full cursor-pointer overflow-hidden rounded-[8px] bg-[#124b9b] text-left shadow-[0_12px_35px_rgba(0,0,0,0.2)] outline-none transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(0,0,0,0.3)] focus-visible:ring-2 focus-visible:ring-[#16d6dc] min-[420px]:h-[130px] sm:h-auto sm:rounded-[10px] lg:rounded-[12px]"
         >
           <img
-            src={ADS_IMAGE_URL2}
-            alt="O-TV and bKash advertisement"
+            src={adsImageUrl}
+            alt="O-TV advertisement"
             draggable={false}
             loading="lazy"
             className="block h-full w-full select-none object-cover object-center transition-transform duration-500 group-hover:scale-[1.01] sm:h-auto"

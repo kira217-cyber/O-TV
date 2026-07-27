@@ -1,8 +1,12 @@
 import React from "react";
-import ComingSoon from "../../components/ComingSoon/ComingSoon";
+import HomeSectionEditor from "../../components/HomeSectionEditor/HomeSectionEditor";
 
-const ContentHollywood = () => {
-  return <ComingSoon title="Hollywood" />;
-};
+const ContentHollywood = () => (
+  <HomeSectionEditor
+    sectionKey="hollywood"
+    pageTitle="Hollywood Section"
+    supportsBackground
+  />
+);
 
 export default ContentHollywood;

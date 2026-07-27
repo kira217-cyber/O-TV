@@ -169,21 +169,28 @@ const Videos = () => {
             No videos found.
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {videos.map((video) => {
               const meta = STATUS_META[video.status] || STATUS_META.pending;
               const StatusIcon = meta.icon;
+              const base = api.defaults.baseURL;
 
               return (
                 <div
                   key={video.id}
-                  className="flex flex-col gap-3 overflow-hidden rounded-[24px] border border-[#8b5cf6]/15 bg-black/30 shadow-xl shadow-black/30 transition hover:border-[#8b5cf6]/40"
+                  className="flex flex-col gap-2 overflow-hidden rounded-[20px] border border-[#8b5cf6]/15 bg-black/30 shadow-xl shadow-black/30 transition hover:border-[#8b5cf6]/40"
                 >
-                  <div className="relative aspect-video w-full overflow-hidden bg-black/50">
+                  <div className="relative w-full overflow-hidden bg-black/50">
+                    {/* Portrait (9:16) on mobile, landscape (16:9) on desktop/laptop */}
                     <img
-                      src={`${api.defaults.baseURL}${video.thumbnail}`}
+                      src={`${base}${video.thumbnail?.portrait}`}
                       alt={video.title}
-                      className="h-full w-full object-cover"
+                      className="aspect-[9/16] h-full w-full object-cover md:hidden"
+                    />
+                    <img
+                      src={`${base}${video.thumbnail?.landscape}`}
+                      alt={video.title}
+                      className="hidden aspect-video h-full w-full object-cover md:block"
                     />
                     <span
                       className={`absolute right-2 top-2 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold ${meta.className}`}
@@ -202,19 +209,19 @@ const Videos = () => {
                       by {video.studioUser?.fullName || "Unknown creator"}
                     </p>
 
-                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-400">
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400">
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3 text-[#8b5cf6]" />
                         {video.duration}
                       </span>
-                      <span className="rounded-full bg-[#8b5cf6]/10 px-2 py-0.5 text-violet-300">
+                      <span className="rounded-full bg-[#8b5cf6]/10 px-2.5 py-1 text-violet-300">
                         {video.category}
                       </span>
                     </div>
 
                     <NavLink
                       to={`/videos/${video.id}`}
-                      className="mt-auto flex cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-[#8b5cf6]/15 px-3 py-2.5 text-xs font-bold text-violet-200 transition hover:bg-[#8b5cf6]/25"
+                      className="mt-auto flex cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-[#8b5cf6]/15 px-3 py-2.5 text-xs font-bold text-violet-200 transition hover:bg-[#8b5cf6]/25"
                     >
                       Review
                       <ChevronRight className="h-3.5 w-3.5" />

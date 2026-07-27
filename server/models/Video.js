@@ -9,6 +9,7 @@ export const CATEGORY_OPTIONS = [
   "Drama",
   "Horror",
   "Thriller",
+  "Sports",
   "Documentary",
   "Educational",
   "Animation",
@@ -26,7 +27,14 @@ const videoSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true, maxlength: 150 },
     description: { type: String, trim: true, maxlength: 2000, default: "" },
 
-    thumbnail: { type: String, required: true },
+    // Two poster images: a 16:9 landscape one used on desktop/laptop and as
+    // the video player's poster (the player frame always stays 16:9), and a
+    // 9:16 portrait one used for mobile card grids.
+    thumbnail: {
+      landscape: { type: String, required: true },
+      portrait: { type: String, required: true },
+    },
+
     duration: { type: String, required: true, trim: true },
 
     maturityRating: {
@@ -54,6 +62,8 @@ const videoSchema = new mongoose.Schema(
     },
 
     rejectionReason: { type: String, default: null },
+
+    views: { type: Number, default: 0 },
   },
   { timestamps: true },
 );

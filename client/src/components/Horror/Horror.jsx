@@ -5,6 +5,7 @@ import { A11y, FreeMode, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 import { alignHoverPreview } from "../../utils/alignHoverPreview";
+import { useSiteSettings } from "../../hooks/useSiteSettings";
 
 import "swiper/css";
 import "swiper/css/free-mode";
@@ -126,6 +127,9 @@ const Horror = () => {
   const swiperRef = useRef(null);
   const navigate = useNavigate();
 
+  const { settings } = useSiteSettings();
+  const sectionTitle = settings?.homeSections?.horror?.title || "Horror";
+
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
@@ -192,11 +196,11 @@ const Horror = () => {
         {/* Header */}
         <div className="mb-4 flex items-center justify-between gap-4">
           <h2 className="flex items-center gap-2 text-[22px] font-semibold tracking-[-0.5px] text-white sm:text-[26px] lg:text-[30px]">
-            <span>Horror</span>
+            <span>{sectionTitle}</span>
 
             <span
               role="img"
-              aria-label="Horror"
+              aria-label={sectionTitle}
               className="text-[20px] sm:text-[23px]"
             >
               👻

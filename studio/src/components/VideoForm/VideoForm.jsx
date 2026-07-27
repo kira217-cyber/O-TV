@@ -8,6 +8,46 @@ import {
   Save,
 } from "lucide-react";
 
+// Reads a video file's real duration in seconds. Some MP4 exports (common
+// from phones/screen recorders that don't "faststart" the file) report
+// duration as Infinity right at loadedmetadata — forcing a seek to a huge
+// timestamp is the standard trick that makes the browser compute the real
+// duration. A timeout guards against browsers where even that never fires.
+const probeVideoDuration = (file) =>
+  new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const probe = document.createElement("video");
+    probe.preload = "metadata";
+
+    const finish = (result, isError) => {
+      clearTimeout(timeoutId);
+      probe.removeAttribute("src");
+      probe.load();
+      URL.revokeObjectURL(url);
+      if (isError) reject(result);
+      else resolve(result);
+    };
+
+    const timeoutId = setTimeout(() => finish(probe.duration, false), 6000);
+
+    probe.onloadedmetadata = () => {
+      if (Number.isFinite(probe.duration)) {
+        finish(probe.duration, false);
+        return;
+      }
+
+      probe.currentTime = Number.MAX_SAFE_INTEGER;
+      probe.ontimeupdate = () => {
+        probe.ontimeupdate = null;
+        finish(probe.duration, false);
+      };
+    };
+
+    probe.onerror = () => finish(new Error("Could not read video metadata"), true);
+
+    probe.src = url;
+  });
+
 import {
   MATURITY_RATING_OPTIONS,
   CATEGORY_OPTIONS,
@@ -82,7 +122,8 @@ const VideoForm = ({
   progress = 0,
   onSubmit,
 }) => {
-  const thumbnailInputRef = useRef(null);
+  const landscapeInputRef = useRef(null);
+  const portraitInputRef = useRef(null);
   const videoInputRef = useRef(null);
   const trailerInputRef = useRef(null);
 
@@ -94,16 +135,25 @@ const VideoForm = ({
   );
   const [category, setCategory] = useState(initialValues.category || "");
 
-  const [thumbnailFile, setThumbnailFile] = useState(null);
-  const [thumbnailPreview, setThumbnailPreview] = useState(
-    initialValues.thumbnailPreview || null,
+  const [landscapeFile, setLandscapeFile] = useState(null);
+  const [landscapePreview, setLandscapePreview] = useState(
+    initialValues.landscapePreview || null,
+  );
+  const [portraitFile, setPortraitFile] = useState(null);
+  const [portraitPreview, setPortraitPreview] = useState(
+    initialValues.portraitPreview || null,
   );
   const [videoFile, setVideoFile] = useState(null);
+  const [videoPreview, setVideoPreview] = useState(null);
   const [trailerFile, setTrailerFile] = useState(null);
+  const [trailerPreview, setTrailerPreview] = useState(null);
+  const [wantsTrailer, setWantsTrailer] = useState(
+    Boolean(initialValues.trailerFileLabel),
+  );
 
   const [error, setError] = useState("");
 
-  const handleThumbnailChange = (e) => {
+  const handleLandscapeChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -120,8 +170,29 @@ const VideoForm = ({
     }
 
     setError("");
-    setThumbnailFile(file);
-    setThumbnailPreview(URL.createObjectURL(file));
+    setLandscapeFile(file);
+    setLandscapePreview(URL.createObjectURL(file));
+  };
+
+  const handlePortraitChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!IMAGE_TYPES.includes(file.type)) {
+      setError("Thumbnail must be PNG, JPG, JPEG, WEBP, or GIF");
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_THUMBNAIL_SIZE) {
+      setError("Thumbnail must be 20MB or smaller");
+      e.target.value = "";
+      return;
+    }
+
+    setError("");
+    setPortraitFile(file);
+    setPortraitPreview(URL.createObjectURL(file));
   };
 
   const handleVideoChange = (e) => {
@@ -136,9 +207,10 @@ const VideoForm = ({
 
     setError("");
     setVideoFile(file);
+    setVideoPreview(URL.createObjectURL(file));
   };
 
-  const handleTrailerChange = (e) => {
+  const handleTrailerChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -148,8 +220,34 @@ const VideoForm = ({
       return;
     }
 
-    setError("");
-    setTrailerFile(file);
+    try {
+      const duration = await probeVideoDuration(file);
+
+      if (!Number.isFinite(duration) || duration < 1 || duration > 240) {
+        setError(
+          `Trailer must be between 1 second and 4 minutes long (yours is ${Math.round(duration)}s)`,
+        );
+        e.target.value = "";
+        return;
+      }
+
+      setError("");
+      setTrailerFile(file);
+      setTrailerPreview(URL.createObjectURL(file));
+    } catch {
+      setError("Could not read the trailer file — try a different file");
+      e.target.value = "";
+    }
+  };
+
+  const handleTrailerWantChange = (wants) => {
+    setWantsTrailer(wants);
+
+    if (!wants) {
+      setTrailerFile(null);
+      setTrailerPreview(null);
+      if (trailerInputRef.current) trailerInputRef.current.value = "";
+    }
   };
 
   const handleSubmit = (e) => {
@@ -160,13 +258,18 @@ const VideoForm = ({
       return;
     }
 
-    if (mode === "create" && !thumbnailFile) {
-      setError("A thumbnail image is required");
+    if (mode === "create" && (!landscapeFile || !portraitFile)) {
+      setError("Both the landscape and portrait thumbnail images are required");
       return;
     }
 
     if (mode === "create" && !videoFile) {
       setError("The full video file is required");
+      return;
+    }
+
+    if (wantsTrailer && !trailerFile && !initialValues.trailerFileLabel) {
+      setError("Choose a trailer file, or switch trailer to \"No\"");
       return;
     }
 
@@ -178,7 +281,8 @@ const VideoForm = ({
     formData.append("duration", duration.trim());
     formData.append("maturityRating", maturityRating);
     formData.append("category", category);
-    if (thumbnailFile) formData.append("thumbnail", thumbnailFile);
+    if (landscapeFile) formData.append("thumbnailLandscape", landscapeFile);
+    if (portraitFile) formData.append("thumbnailPortrait", portraitFile);
     if (videoFile) formData.append("video", videoFile);
     if (trailerFile) formData.append("trailer", trailerFile);
 
@@ -277,77 +381,174 @@ const VideoForm = ({
         </div>
       </div>
 
-      <FileSlot
-        label="Thumbnail Image"
-        icon={<ImageUp className="h-4 w-4" />}
-        accept="image/png,image/jpeg,image/webp,image/gif"
-        guidance={
-          <>
-            Recommended size:{" "}
-            <span className="font-bold text-white">1280×720px</span> (16:9
-            landscape). Max file size:{" "}
-            <span className="font-bold text-white">20MB</span>. Supported
-            formats:{" "}
-            <span className="font-bold text-white">
-              PNG, JPG, JPEG, WEBP, GIF
-            </span>
-            .
-          </>
-        }
-        currentLabel={initialValues.thumbnailPreview ? "existing thumbnail" : null}
-        fileName={thumbnailFile?.name}
-        onChange={handleThumbnailChange}
-        inputRef={thumbnailInputRef}
-      />
-
-      {thumbnailPreview && (
-        <div className="overflow-hidden rounded-2xl border border-[#f59e0b]/20">
-          <img
-            src={thumbnailPreview}
-            alt="Thumbnail preview"
-            className="aspect-video w-full object-cover"
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div>
+          <FileSlot
+            label="Thumbnail — Landscape (Desktop/Laptop)"
+            icon={<ImageUp className="h-4 w-4" />}
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            guidance={
+              <>
+                Recommended{" "}
+                <span className="font-bold text-white">1280×720px</span>{" "}
+                (16:9). Shown on desktop/laptop and as the video player's
+                poster. Max file size:{" "}
+                <span className="font-bold text-white">20MB</span>.
+              </>
+            }
+            currentLabel={initialValues.landscapePreview ? "existing thumbnail" : null}
+            fileName={landscapeFile?.name}
+            onChange={handleLandscapeChange}
+            inputRef={landscapeInputRef}
           />
+
+          {landscapePreview && (
+            <div className="mt-3 w-full max-w-md overflow-hidden rounded-2xl border border-[#f59e0b]/20">
+              <img
+                src={landscapePreview}
+                alt="Landscape thumbnail preview"
+                className="aspect-video w-full object-cover"
+              />
+            </div>
+          )}
         </div>
-      )}
 
-      <FileSlot
-        label="Full Video"
-        icon={<UploadCloud className="h-4 w-4" />}
-        accept="video/mp4,video/webm,video/quicktime,video/x-matroska,video/x-msvideo,video/3gpp"
-        guidance={
-          <>
-            Supported formats:{" "}
-            <span className="font-bold text-white">
-              MP4, WEBM, MOV, MKV, AVI
-            </span>
-            . Max file size:{" "}
-            <span className="font-bold text-white">up to 2GB</span>. Larger
-            files may take longer to upload — keep this tab open until it
-            finishes.
-          </>
-        }
-        currentLabel={initialValues.videoFileLabel}
-        fileName={videoFile?.name}
-        onChange={handleVideoChange}
-        inputRef={videoInputRef}
-      />
+        <div>
+          <FileSlot
+            label="Thumbnail — Portrait (Mobile)"
+            icon={<ImageUp className="h-4 w-4" />}
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            guidance={
+              <>
+                Recommended{" "}
+                <span className="font-bold text-white">720×1280px</span>{" "}
+                (9:16). Shown on mobile card grids. Max file size:{" "}
+                <span className="font-bold text-white">20MB</span>.
+              </>
+            }
+            currentLabel={initialValues.portraitPreview ? "existing thumbnail" : null}
+            fileName={portraitFile?.name}
+            onChange={handlePortraitChange}
+            inputRef={portraitInputRef}
+          />
 
-      <FileSlot
-        label="Trailer (Optional)"
-        icon={<Clapperboard className="h-4 w-4" />}
-        accept="video/mp4,video/webm,video/quicktime,video/x-matroska,video/x-msvideo,video/3gpp"
-        guidance={
+          {portraitPreview && (
+            <div className="mt-3 w-full max-w-55 overflow-hidden rounded-2xl border border-[#f59e0b]/20">
+              <img
+                src={portraitPreview}
+                alt="Portrait thumbnail preview"
+                className="aspect-[9/16] w-full object-cover"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <p className="-mt-2 text-xs text-slate-500">
+        Supported formats:{" "}
+        <span className="font-semibold text-slate-300">
+          PNG, JPG, JPEG, WEBP, GIF
+        </span>
+        .
+      </p>
+
+      <div>
+        <FileSlot
+          label="Full Video"
+          icon={<UploadCloud className="h-4 w-4" />}
+          accept="video/mp4,video/webm,video/quicktime,video/x-matroska,video/x-msvideo,video/3gpp"
+          guidance={
+            <>
+              Supported formats:{" "}
+              <span className="font-bold text-white">
+                MP4, WEBM, MOV, MKV, AVI
+              </span>
+              . Max file size:{" "}
+              <span className="font-bold text-white">up to 2GB</span>. Larger
+              files may take longer to upload — keep this tab open until it
+              finishes.
+            </>
+          }
+          currentLabel={initialValues.videoFileLabel}
+          fileName={videoFile?.name}
+          onChange={handleVideoChange}
+          inputRef={videoInputRef}
+        />
+
+        {videoPreview && (
+          <video
+            src={videoPreview}
+            controls
+            className="mt-3 w-full max-w-md rounded-2xl border border-[#f59e0b]/20 bg-black"
+          />
+        )}
+      </div>
+
+      <div>
+        <label className="mb-2 block text-sm font-semibold text-slate-200">
+          Trailer (Optional)
+        </label>
+
+        <p className="mb-3 text-xs leading-relaxed text-slate-400">
+          A short preview clip (up to 4 minutes) viewers watch before the
+          full video. Do you want to add one?
+        </p>
+
+        <div className="mb-4 flex gap-3">
+          <button
+            type="button"
+            onClick={() => handleTrailerWantChange(true)}
+            className={`flex-1 cursor-pointer rounded-2xl border px-4 py-2.5 text-sm font-bold transition ${
+              wantsTrailer
+                ? "border-[#f59e0b]/60 bg-[#f59e0b]/20 text-amber-200"
+                : "border-[#f59e0b]/20 bg-black/25 text-slate-400 hover:bg-[#f59e0b]/10"
+            }`}
+          >
+            Yes, add a trailer
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleTrailerWantChange(false)}
+            className={`flex-1 cursor-pointer rounded-2xl border px-4 py-2.5 text-sm font-bold transition ${
+              !wantsTrailer
+                ? "border-[#f59e0b]/60 bg-[#f59e0b]/20 text-amber-200"
+                : "border-[#f59e0b]/20 bg-black/25 text-slate-400 hover:bg-[#f59e0b]/10"
+            }`}
+          >
+            No trailer
+          </button>
+        </div>
+
+        {wantsTrailer && (
           <>
-            A short preview clip viewers can watch before the full video.
-            Same supported formats as the full video. Leave this empty if you
-            don't have one.
+            <FileSlot
+              label="Trailer File"
+              icon={<Clapperboard className="h-4 w-4" />}
+              accept="video/mp4,video/webm,video/quicktime,video/x-matroska,video/x-msvideo,video/3gpp"
+              guidance={
+                <>
+                  Must be{" "}
+                  <span className="font-bold text-white">4 minutes or shorter</span>{" "}
+                  . Same supported formats as the full video.
+                </>
+              }
+              currentLabel={initialValues.trailerFileLabel}
+              fileName={trailerFile?.name}
+              onChange={handleTrailerChange}
+              inputRef={trailerInputRef}
+            />
+
+            {trailerPreview && (
+              <video
+                src={trailerPreview}
+                controls
+                className="mt-3 w-full max-w-md rounded-2xl border border-[#f59e0b]/20 bg-black"
+              />
+            )}
           </>
-        }
-        currentLabel={initialValues.trailerFileLabel}
-        fileName={trailerFile?.name}
-        onChange={handleTrailerChange}
-        inputRef={trailerInputRef}
-      />
+        )}
+      </div>
 
       {submitting && (
         <div>

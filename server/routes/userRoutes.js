@@ -24,6 +24,42 @@ const deleteUploadedFile = (relativePath) => {
 };
 
 /* =========================
+   User Stats (for the admin dashboard)
+========================= */
+router.get("/stats", protectAdmin, async (req, res) => {
+  try {
+    const total = await StudioUser.countDocuments({});
+
+    const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dayStarts = Array.from({ length: 7 }, (_, index) => {
+      const start = new Date(today);
+      start.setDate(start.getDate() - (6 - index));
+      return start;
+    });
+
+    const weeklySignups = await Promise.all(
+      dayStarts.map(async (start) => {
+        const end = new Date(start);
+        end.setDate(end.getDate() + 1);
+
+        const count = await StudioUser.countDocuments({
+          createdAt: { $gte: start, $lt: end },
+        });
+
+        return { label: WEEKDAY_LABELS[start.getDay()], value: count };
+      }),
+    );
+
+    return successResponse(res, "Stats loaded", { total, weeklySignups });
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+});
+
+/* =========================
    List / Search Users (paginated)
 ========================= */
 router.get("/", protectAdmin, async (req, res) => {

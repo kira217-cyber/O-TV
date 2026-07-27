@@ -19,6 +19,8 @@ import { publicVideo } from "../utils/videoSerializer.js";
 
 const router = express.Router();
 
+const DEFAULT_PAGE_SIZE = 30;
+
 /* =========================
    Create Video (upload -> pending review)
 ========================= */
@@ -28,7 +30,8 @@ router.post(
   handleUpload(uploadVideoFields),
   async (req, res) => {
     const files = req.files || {};
-    const thumbnailFile = files.thumbnail?.[0];
+    const landscapeFile = files.thumbnailLandscape?.[0];
+    const portraitFile = files.thumbnailPortrait?.[0];
     const videoFile = files.video?.[0];
     const trailerFile = files.trailer?.[0];
 
@@ -59,20 +62,27 @@ router.post(
         return errorResponse(res, "Invalid category", 400);
       }
 
-      if (!thumbnailFile) {
-        return errorResponse(res, "Thumbnail image is required", 400);
+      if (!landscapeFile || !portraitFile) {
+        return errorResponse(
+          res,
+          "Both landscape (16:9) and portrait (9:16) thumbnail images are required",
+          400,
+        );
       }
 
-      if (thumbnailFile.size > MAX_THUMBNAIL_SIZE) {
-        return errorResponse(res, "Thumbnail must be 20MB or smaller", 400);
+      if (landscapeFile.size > MAX_THUMBNAIL_SIZE || portraitFile.size > MAX_THUMBNAIL_SIZE) {
+        return errorResponse(res, "Thumbnails must be 20MB or smaller", 400);
       }
 
       if (!videoFile) {
         return errorResponse(res, "Full video file is required", 400);
       }
 
-      const thumbnailPath = await saveThumbnail(thumbnailFile);
-      rollbackActions.push(async () => deleteLocalFile(thumbnailPath));
+      const landscapePath = await saveThumbnail(landscapeFile);
+      rollbackActions.push(async () => deleteLocalFile(landscapePath));
+
+      const portraitPath = await saveThumbnail(portraitFile);
+      rollbackActions.push(async () => deleteLocalFile(portraitPath));
 
       const videoFileName = buildBunnyFileName("video", videoFile.originalname);
       const videoUrl = await uploadToBunny(
@@ -102,7 +112,7 @@ router.post(
         studioUser: req.studioUser._id,
         title: title.trim(),
         description: description?.trim() || "",
-        thumbnail: thumbnailPath,
+        thumbnail: { landscape: landscapePath, portrait: portraitPath },
         duration: duration.trim(),
         maturityRating,
         category,
@@ -125,16 +135,64 @@ router.post(
 );
 
 /* =========================
-   List My Videos
+   List My Videos (paginated + searchable)
 ========================= */
 router.get("/", protectStudioUser, async (req, res) => {
   try {
-    const videos = await Video.find({ studioUser: req.studioUser._id }).sort({
-      createdAt: -1,
-    });
+    const { search, page: pageQuery, limit: limitQuery } = req.query || {};
+
+    const filter = { studioUser: req.studioUser._id };
+
+    if (typeof search === "string" && search.trim()) {
+      filter.title = new RegExp(search.trim(), "i");
+    }
+
+    const page = Math.max(1, parseInt(pageQuery, 10) || 1);
+    const limit = Math.max(1, parseInt(limitQuery, 10) || DEFAULT_PAGE_SIZE);
+
+    const [videos, total] = await Promise.all([
+      Video.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      Video.countDocuments(filter),
+    ]);
 
     return successResponse(res, "Videos loaded", {
       videos: videos.map((video) => publicVideo(video)),
+      total,
+      page,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    });
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+});
+
+/* =========================
+   My Video Stats (for the dashboard)
+========================= */
+router.get("/stats", protectStudioUser, async (req, res) => {
+  try {
+    const studioUser = req.studioUser._id;
+
+    const [total, pending, active, rejected, viewsAgg] = await Promise.all([
+      Video.countDocuments({ studioUser }),
+      Video.countDocuments({ studioUser, status: "pending" }),
+      Video.countDocuments({ studioUser, status: "active" }),
+      Video.countDocuments({ studioUser, status: "rejected" }),
+      Video.aggregate([
+        { $match: { studioUser } },
+        { $group: { _id: null, total: { $sum: "$views" } } },
+      ]),
+    ]);
+
+    return successResponse(res, "Stats loaded", {
+      total,
+      pending,
+      active,
+      rejected,
+      views: viewsAgg[0]?.total || 0,
     });
   } catch (error) {
     return errorResponse(res, error.message, 500);
@@ -170,7 +228,8 @@ router.put(
   handleUpload(uploadVideoFields),
   async (req, res) => {
     const files = req.files || {};
-    const thumbnailFile = files.thumbnail?.[0];
+    const landscapeFile = files.thumbnailLandscape?.[0];
+    const portraitFile = files.thumbnailPortrait?.[0];
     const videoFile = files.video?.[0];
     const trailerFile = files.trailer?.[0];
 
@@ -181,7 +240,8 @@ router.put(
       }
     };
 
-    let oldThumbnail = null;
+    let oldLandscape = null;
+    let oldPortrait = null;
     let oldVideoFileName = null;
     let oldTrailerFileName = null;
 
@@ -209,16 +269,32 @@ router.put(
         return errorResponse(res, "Invalid category", 400);
       }
 
-      if (thumbnailFile) {
-        if (thumbnailFile.size > MAX_THUMBNAIL_SIZE) {
+      if (typeof video.thumbnail !== "object" || video.thumbnail === null) {
+        video.thumbnail = {};
+      }
+
+      if (landscapeFile) {
+        if (landscapeFile.size > MAX_THUMBNAIL_SIZE) {
           await rollback();
           return errorResponse(res, "Thumbnail must be 20MB or smaller", 400);
         }
 
-        const newThumbnailPath = await saveThumbnail(thumbnailFile);
-        rollbackActions.push(async () => deleteLocalFile(newThumbnailPath));
-        oldThumbnail = video.thumbnail;
-        video.thumbnail = newThumbnailPath;
+        const newLandscapePath = await saveThumbnail(landscapeFile);
+        rollbackActions.push(async () => deleteLocalFile(newLandscapePath));
+        oldLandscape = video.thumbnail?.landscape;
+        video.thumbnail.landscape = newLandscapePath;
+      }
+
+      if (portraitFile) {
+        if (portraitFile.size > MAX_THUMBNAIL_SIZE) {
+          await rollback();
+          return errorResponse(res, "Thumbnail must be 20MB or smaller", 400);
+        }
+
+        const newPortraitPath = await saveThumbnail(portraitFile);
+        rollbackActions.push(async () => deleteLocalFile(newPortraitPath));
+        oldPortrait = video.thumbnail?.portrait;
+        video.thumbnail.portrait = newPortraitPath;
       }
 
       if (videoFile) {
@@ -264,7 +340,8 @@ router.put(
 
       await video.save();
 
-      if (oldThumbnail) deleteLocalFile(oldThumbnail);
+      if (oldLandscape) deleteLocalFile(oldLandscape);
+      if (oldPortrait) deleteLocalFile(oldPortrait);
       if (oldVideoFileName) await deleteFromBunny(oldVideoFileName);
       if (oldTrailerFileName) await deleteFromBunny(oldTrailerFileName);
 
@@ -294,7 +371,8 @@ router.delete("/:id", protectStudioUser, async (req, res) => {
       return errorResponse(res, "Video not found", 404);
     }
 
-    deleteLocalFile(video.thumbnail);
+    deleteLocalFile(video.thumbnail?.landscape);
+    deleteLocalFile(video.thumbnail?.portrait);
     await deleteFromBunny(video.video?.fileName);
     if (video.trailer?.fileName) await deleteFromBunny(video.trailer.fileName);
 

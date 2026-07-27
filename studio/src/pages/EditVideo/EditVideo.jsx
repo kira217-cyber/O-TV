@@ -67,7 +67,7 @@ const EditVideo = () => {
   if (!video) return null;
 
   return (
-    <div className="mx-auto max-w-2xl text-white">
+    <div className="mx-auto max-w-7xl text-white">
       <div className="mb-8 flex items-center gap-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#fde68a] via-[#f59e0b] to-[#b45309] shadow-lg shadow-[#f59e0b]/30">
           <Pencil className="h-6 w-6 text-black" />
@@ -95,7 +95,8 @@ const EditVideo = () => {
           duration: video.duration,
           maturityRating: video.maturityRating,
           category: video.category,
-          thumbnailPreview: `${api.defaults.baseURL}${video.thumbnail}`,
+          landscapePreview: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
+          portraitPreview: `${api.defaults.baseURL}${video.thumbnail?.portrait}`,
           videoFileLabel: "current video file",
           trailerFileLabel: video.trailer ? "current trailer file" : null,
         }}

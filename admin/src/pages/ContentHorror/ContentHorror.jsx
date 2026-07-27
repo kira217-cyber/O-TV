@@ -1,8 +1,8 @@
 import React from "react";
-import ComingSoon from "../../components/ComingSoon/ComingSoon";
+import HomeSectionEditor from "../../components/HomeSectionEditor/HomeSectionEditor";
 
-const ContentHorror = () => {
-  return <ComingSoon title="Horror" />;
-};
+const ContentHorror = () => (
+  <HomeSectionEditor sectionKey="horror" pageTitle="Horror Section" />
+);
 
 export default ContentHorror;

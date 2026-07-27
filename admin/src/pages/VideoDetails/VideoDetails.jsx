@@ -23,6 +23,7 @@ import {
   MATURITY_RATING_OPTIONS,
   CATEGORY_OPTIONS,
 } from "../../constants/videoOptions";
+import VideoPlayer from "../../components/VideoPlayer/VideoPlayer";
 
 const MAX_THUMBNAIL_SIZE = 20 * 1024 * 1024;
 const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
@@ -53,6 +54,46 @@ const STATUS_META = {
   },
 };
 
+// Reads a video file's real duration in seconds. Some MP4 exports (common
+// from phones/screen recorders that don't "faststart" the file) report
+// duration as Infinity right at loadedmetadata — forcing a seek to a huge
+// timestamp is the standard trick that makes the browser compute the real
+// duration. A timeout guards against browsers where even that never fires.
+const probeVideoDuration = (file) =>
+  new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const probe = document.createElement("video");
+    probe.preload = "metadata";
+
+    const finish = (result, isError) => {
+      clearTimeout(timeoutId);
+      probe.removeAttribute("src");
+      probe.load();
+      URL.revokeObjectURL(url);
+      if (isError) reject(result);
+      else resolve(result);
+    };
+
+    const timeoutId = setTimeout(() => finish(probe.duration, false), 6000);
+
+    probe.onloadedmetadata = () => {
+      if (Number.isFinite(probe.duration)) {
+        finish(probe.duration, false);
+        return;
+      }
+
+      probe.currentTime = Number.MAX_SAFE_INTEGER;
+      probe.ontimeupdate = () => {
+        probe.ontimeupdate = null;
+        finish(probe.duration, false);
+      };
+    };
+
+    probe.onerror = () => finish(new Error("Could not read video metadata"), true);
+
+    probe.src = url;
+  });
+
 const formatDate = (value) => {
   if (!value) return "—";
 
@@ -67,7 +108,8 @@ const VideoDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const thumbnailInputRef = useRef(null);
+  const landscapeInputRef = useRef(null);
+  const portraitInputRef = useRef(null);
   const videoInputRef = useRef(null);
   const trailerInputRef = useRef(null);
 
@@ -78,6 +120,7 @@ const VideoDetails = () => {
   const [saving, setSaving] = useState(false);
   const [showRejectBox, setShowRejectBox] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [showTrailer, setShowTrailer] = useState(false);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -85,10 +128,14 @@ const VideoDetails = () => {
   const [maturityRating, setMaturityRating] = useState("");
   const [category, setCategory] = useState("");
 
-  const [thumbnailFile, setThumbnailFile] = useState(null);
-  const [thumbnailPreview, setThumbnailPreview] = useState(null);
+  const [landscapeFile, setLandscapeFile] = useState(null);
+  const [landscapePreview, setLandscapePreview] = useState(null);
+  const [portraitFile, setPortraitFile] = useState(null);
+  const [portraitPreview, setPortraitPreview] = useState(null);
   const [videoFile, setVideoFile] = useState(null);
+  const [videoPreview, setVideoPreview] = useState(null);
   const [trailerFile, setTrailerFile] = useState(null);
+  const [trailerPreview, setTrailerPreview] = useState(null);
 
   const loadVideo = async () => {
     try {
@@ -160,7 +207,7 @@ const VideoDetails = () => {
     }
   };
 
-  const handleThumbnailChange = (e) => {
+  const handleLandscapeChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -176,8 +223,28 @@ const VideoDetails = () => {
       return;
     }
 
-    setThumbnailFile(file);
-    setThumbnailPreview(URL.createObjectURL(file));
+    setLandscapeFile(file);
+    setLandscapePreview(URL.createObjectURL(file));
+  };
+
+  const handlePortraitChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!IMAGE_TYPES.includes(file.type)) {
+      toast.error("Thumbnail must be PNG, JPG, JPEG, WEBP, or GIF");
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_THUMBNAIL_SIZE) {
+      toast.error("Thumbnail must be 20MB or smaller");
+      e.target.value = "";
+      return;
+    }
+
+    setPortraitFile(file);
+    setPortraitPreview(URL.createObjectURL(file));
   };
 
   const handleVideoChange = (e) => {
@@ -191,9 +258,10 @@ const VideoDetails = () => {
     }
 
     setVideoFile(file);
+    setVideoPreview(URL.createObjectURL(file));
   };
 
-  const handleTrailerChange = (e) => {
+  const handleTrailerChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -203,7 +271,23 @@ const VideoDetails = () => {
       return;
     }
 
-    setTrailerFile(file);
+    try {
+      const duration = await probeVideoDuration(file);
+
+      if (!Number.isFinite(duration) || duration < 1 || duration > 240) {
+        toast.error(
+          `Trailer must be between 1 second and 4 minutes long (yours is ${Math.round(duration)}s)`,
+        );
+        e.target.value = "";
+        return;
+      }
+
+      setTrailerFile(file);
+      setTrailerPreview(URL.createObjectURL(file));
+    } catch {
+      toast.error("Could not read the trailer file — try a different file");
+      e.target.value = "";
+    }
   };
 
   const handleSave = async (e) => {
@@ -218,7 +302,8 @@ const VideoDetails = () => {
       formData.append("duration", duration.trim());
       formData.append("maturityRating", maturityRating);
       formData.append("category", category);
-      if (thumbnailFile) formData.append("thumbnail", thumbnailFile);
+      if (landscapeFile) formData.append("thumbnailLandscape", landscapeFile);
+      if (portraitFile) formData.append("thumbnailPortrait", portraitFile);
       if (videoFile) formData.append("video", videoFile);
       if (trailerFile) formData.append("trailer", trailerFile);
 
@@ -226,10 +311,14 @@ const VideoDetails = () => {
       const updated = data?.data?.video || data?.video;
 
       setVideo(updated);
-      setThumbnailFile(null);
-      setThumbnailPreview(null);
+      setLandscapeFile(null);
+      setLandscapePreview(null);
+      setPortraitFile(null);
+      setPortraitPreview(null);
       setVideoFile(null);
+      setVideoPreview(null);
       setTrailerFile(null);
+      setTrailerPreview(null);
       toast.success("Video updated successfully");
     } catch (error) {
       toast.error(error?.response?.data?.message || "Failed to update video");
@@ -253,7 +342,7 @@ const VideoDetails = () => {
 
   return (
     <div className="min-h-screen text-white">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-7xl">
         <NavLink
           to="/videos"
           className="mb-6 inline-flex cursor-pointer items-center gap-2 text-sm font-bold text-violet-200 transition hover:text-white"
@@ -308,28 +397,39 @@ const VideoDetails = () => {
           </div>
         )}
 
-        <div className="mb-6 overflow-hidden rounded-[28px] border border-[#8b5cf6]/20 bg-black/40 shadow-2xl shadow-black/40">
-          <video
-            controls
-            poster={`${api.defaults.baseURL}${video.thumbnail}`}
-            src={video.video?.url}
-            className="aspect-video w-full bg-black"
+        <div className="mb-4">
+          <VideoPlayer
+            src={showTrailer ? video.trailer?.url : video.video?.url}
+            poster={`${api.defaults.baseURL}${video.thumbnail?.landscape}`}
+            title={video.title}
           />
         </div>
 
         {video.trailer?.url && (
-          <div className="mb-6">
-            <p className="mb-2 flex items-center gap-1.5 text-sm font-bold text-slate-300">
-              <Clapperboard className="h-4 w-4 text-[#8b5cf6]" />
+          <div className="mb-6 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setShowTrailer(false)}
+              className={`flex cursor-pointer items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition ${
+                !showTrailer
+                  ? "bg-[#8b5cf6]/20 text-violet-200"
+                  : "bg-black/30 text-slate-400 hover:text-white"
+              }`}
+            >
+              Full Video
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowTrailer(true)}
+              className={`flex cursor-pointer items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition ${
+                showTrailer
+                  ? "bg-[#8b5cf6]/20 text-violet-200"
+                  : "bg-black/30 text-slate-400 hover:text-white"
+              }`}
+            >
+              <Clapperboard className="h-3.5 w-3.5" />
               Trailer
-            </p>
-            <div className="overflow-hidden rounded-[28px] border border-[#8b5cf6]/20 bg-black/40 shadow-2xl shadow-black/40">
-              <video
-                controls
-                src={video.trailer.url}
-                className="aspect-video w-full bg-black"
-              />
-            </div>
+            </button>
           </div>
         )}
 
@@ -537,63 +637,118 @@ const VideoDetails = () => {
             </div>
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-slate-200">
-              Thumbnail Image
-            </label>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-200">
+                Thumbnail — Landscape (Desktop/Laptop)
+              </label>
 
-            <div className="mb-3 flex items-start gap-2 rounded-2xl border border-[#8b5cf6]/15 bg-[#8b5cf6]/5 px-4 py-3 text-xs leading-relaxed text-slate-300">
-              <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#8b5cf6]" />
-              <span>
-                Recommended size:{" "}
-                <span className="font-bold text-white">1280×720px</span>{" "}
-                (16:9 landscape). Max file size:{" "}
-                <span className="font-bold text-white">20MB</span>. Supported
-                formats:{" "}
-                <span className="font-bold text-white">
-                  PNG, JPG, JPEG, WEBP, GIF
+              <div className="mb-3 flex items-start gap-2 rounded-2xl border border-[#8b5cf6]/15 bg-[#8b5cf6]/5 px-4 py-3 text-xs leading-relaxed text-slate-300">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#8b5cf6]" />
+                <span>
+                  Recommended{" "}
+                  <span className="font-bold text-white">1280×720px</span>{" "}
+                  (16:9). Also used as the video player's poster.
                 </span>
-                .
-              </span>
-            </div>
+              </div>
 
-            <div className="flex items-center gap-5">
-              <div className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-[#8b5cf6]/25 bg-black/30">
+              <div className="w-full max-w-md overflow-hidden rounded-2xl border-2 border-[#8b5cf6]/25 bg-black/30">
                 <img
                   src={
-                    thumbnailPreview || `${api.defaults.baseURL}${video.thumbnail}`
+                    landscapePreview ||
+                    `${api.defaults.baseURL}${video.thumbnail?.landscape}`
                   }
                   alt={video.title}
-                  className="h-full w-full object-cover"
+                  className="aspect-video w-full object-cover"
                 />
               </div>
 
-              <div className="flex-1">
+              <div className="mt-3">
                 <input
-                  ref={thumbnailInputRef}
+                  ref={landscapeInputRef}
                   type="file"
                   accept="image/png,image/jpeg,image/webp,image/gif"
-                  onChange={handleThumbnailChange}
+                  onChange={handleLandscapeChange}
                   className="hidden"
                 />
 
                 <button
                   type="button"
-                  onClick={() => thumbnailInputRef.current?.click()}
-                  className="flex cursor-pointer items-center gap-2 rounded-2xl border border-[#8b5cf6]/25 bg-[#8b5cf6]/10 px-5 py-3 text-sm font-bold text-violet-200 transition hover:bg-[#8b5cf6]/20"
+                  onClick={() => landscapeInputRef.current?.click()}
+                  className="flex cursor-pointer items-center gap-2 rounded-2xl border border-[#8b5cf6]/25 bg-[#8b5cf6]/10 px-4 py-2.5 text-xs font-bold text-violet-200 transition hover:bg-[#8b5cf6]/20"
                 >
-                  <ImageUp className="h-4 w-4" />
-                  Change Thumbnail
+                  <ImageUp className="h-3.5 w-3.5" />
+                  Change
                 </button>
 
-                {thumbnailFile && (
+                {landscapeFile && (
                   <p className="mt-2 truncate text-xs text-slate-400">
-                    Selected: {thumbnailFile.name}
+                    Selected: {landscapeFile.name}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-slate-200">
+                Thumbnail — Portrait (Mobile)
+              </label>
+
+              <div className="mb-3 flex items-start gap-2 rounded-2xl border border-[#8b5cf6]/15 bg-[#8b5cf6]/5 px-4 py-3 text-xs leading-relaxed text-slate-300">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#8b5cf6]" />
+                <span>
+                  Recommended{" "}
+                  <span className="font-bold text-white">720×1280px</span>{" "}
+                  (9:16). Shown on mobile card grids.
+                </span>
+              </div>
+
+              <div className="w-full max-w-55 overflow-hidden rounded-2xl border-2 border-[#8b5cf6]/25 bg-black/30">
+                <img
+                  src={
+                    portraitPreview ||
+                    `${api.defaults.baseURL}${video.thumbnail?.portrait}`
+                  }
+                  alt={video.title}
+                  className="aspect-[9/16] w-full object-cover"
+                />
+              </div>
+
+              <div className="mt-3">
+                <input
+                  ref={portraitInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  onChange={handlePortraitChange}
+                  className="hidden"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => portraitInputRef.current?.click()}
+                  className="flex cursor-pointer items-center gap-2 rounded-2xl border border-[#8b5cf6]/25 bg-[#8b5cf6]/10 px-4 py-2.5 text-xs font-bold text-violet-200 transition hover:bg-[#8b5cf6]/20"
+                >
+                  <ImageUp className="h-3.5 w-3.5" />
+                  Change
+                </button>
+
+                {portraitFile && (
+                  <p className="mt-2 truncate text-xs text-slate-400">
+                    Selected: {portraitFile.name}
                   </p>
                 )}
               </div>
             </div>
           </div>
+
+          <p className="-mt-2 text-xs text-slate-500">
+            Max file size: <span className="font-semibold text-slate-300">20MB</span>{" "}
+            each. Supported formats:{" "}
+            <span className="font-semibold text-slate-300">
+              PNG, JPG, JPEG, WEBP, GIF
+            </span>
+            .
+          </p>
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-slate-200">
@@ -622,12 +777,24 @@ const VideoDetails = () => {
                 Selected: {videoFile.name}
               </p>
             )}
+
+            {videoPreview && (
+              <video
+                src={videoPreview}
+                controls
+                className="mt-3 w-full max-w-md rounded-2xl border border-[#8b5cf6]/20 bg-black"
+              />
+            )}
           </div>
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-slate-200">
               Trailer
             </label>
+
+            <p className="mb-3 text-xs leading-relaxed text-slate-400">
+              Must be <span className="font-bold text-white">4 minutes or shorter</span>.
+            </p>
 
             <input
               ref={trailerInputRef}
@@ -650,6 +817,14 @@ const VideoDetails = () => {
               <p className="mt-2 truncate text-xs text-slate-400">
                 Selected: {trailerFile.name}
               </p>
+            )}
+
+            {trailerPreview && (
+              <video
+                src={trailerPreview}
+                controls
+                className="mt-3 w-full max-w-md rounded-2xl border border-[#8b5cf6]/20 bg-black"
+              />
             )}
           </div>
 

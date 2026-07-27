@@ -1,8 +1,8 @@
 import React from "react";
-import ComingSoon from "../../components/ComingSoon/ComingSoon";
+import HomeSectionEditor from "../../components/HomeSectionEditor/HomeSectionEditor";
 
-const ContentTopTen = () => {
-  return <ComingSoon title="Top Ten Movies" />;
-};
+const ContentTopTen = () => (
+  <HomeSectionEditor sectionKey="topTen" pageTitle="Top 10 Movies Section" />
+);
 
 export default ContentTopTen;

@@ -1,8 +1,12 @@
 import React from "react";
-import ComingSoon from "../../components/ComingSoon/ComingSoon";
+import HomeSectionEditor from "../../components/HomeSectionEditor/HomeSectionEditor";
 
-const ContentFreeMovie = () => {
-  return <ComingSoon title="Free Movies" />;
-};
+const ContentFreeMovie = () => (
+  <HomeSectionEditor
+    sectionKey="freeMovie"
+    pageTitle="Free Movie Section"
+    supportsBackground
+  />
+);
 
 export default ContentFreeMovie;

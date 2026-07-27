@@ -1,8 +1,8 @@
 import React from "react";
-import ComingSoon from "../../components/ComingSoon/ComingSoon";
+import HomeSectionEditor from "../../components/HomeSectionEditor/HomeSectionEditor";
 
-const ContentAllChannel = () => {
-  return <ComingSoon title="All Channels" />;
-};
+const ContentAllChannel = () => (
+  <HomeSectionEditor sectionKey="allChannel" pageTitle="All Channels Section" />
+);
 
 export default ContentAllChannel;

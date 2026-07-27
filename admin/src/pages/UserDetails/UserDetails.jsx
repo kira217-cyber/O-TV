@@ -200,7 +200,7 @@ const UserDetails = () => {
 
   return (
     <div className="min-h-screen text-white">
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-7xl">
         <NavLink
           to="/all-users"
           className="mb-6 inline-flex cursor-pointer items-center gap-2 text-sm font-bold text-violet-200 transition hover:text-white"

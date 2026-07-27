@@ -2,17 +2,32 @@ import React from "react";
 import { NavLink } from "react-router";
 import { FaFacebookF, FaYoutube } from "react-icons/fa";
 
-const FOOTER_LOGO =
+import { api } from "../../api/axios";
+import { useSiteSettings } from "../../hooks/useSiteSettings";
+
+const DEFAULT_FOOTER_LOGO =
   "https://asset.bioscopelive.com/uploads/images/2025/07/28/images_d6ce912746f794656d087b55ef04100d_goplay_bios.png?w=560";
 
-const GOOGLE_PLAY =
-  "https://www.bioscopeplus.com/images/google-play.png?w=384&q=75";
-
-const APPLE_STORE =
-  "https://www.bioscopeplus.com/images/apple-play.png?w=256&q=75";
-
-const ANDROID_TV =
-  "https://www.bioscopeplus.com/images/android-tv.png?w=256&q=75";
+const DEFAULT_DOWNLOAD_LINKS = [
+  {
+    label: "Google Play",
+    url: "https://play.google.com/",
+    openInNewTab: true,
+    image: "https://www.bioscopeplus.com/images/google-play.png?w=384&q=75",
+  },
+  {
+    label: "Apple App Store",
+    url: "https://www.apple.com/app-store/",
+    openInNewTab: true,
+    image: "https://www.bioscopeplus.com/images/apple-play.png?w=256&q=75",
+  },
+  {
+    label: "Android TV",
+    url: "https://play.google.com/",
+    openInNewTab: true,
+    image: "https://www.bioscopeplus.com/images/android-tv.png?w=256&q=75",
+  },
+];
 
 const aboutLinks = [
   {
@@ -41,6 +56,20 @@ const helpLinks = [
 ];
 
 const Footer = () => {
+  const { settings } = useSiteSettings();
+
+  const footerLogo = settings?.logo
+    ? `${api.defaults.baseURL}${settings.logo}`
+    : DEFAULT_FOOTER_LOGO;
+
+  const downloadLinks =
+    settings?.footerLinks?.length > 0
+      ? settings.footerLinks.map((link) => ({
+          ...link,
+          image: `${api.defaults.baseURL}${link.image}`,
+        }))
+      : DEFAULT_DOWNLOAD_LINKS;
+
   return (
     <footer className="w-full bg-[#111618] text-white">
       <div className="mx-auto w-full max-w-[1680px] px-[14px] pb-4 pt-[6px] sm:px-8 sm:pt-10 lg:px-10 lg:pb-11 lg:pt-[50px] xl:px-[114px]">
@@ -56,7 +85,7 @@ const Footer = () => {
               className="inline-flex cursor-pointer items-center"
             >
               <img
-                src={FOOTER_LOGO}
+                src={footerLogo}
                 alt="O-TV"
                 draggable={false}
                 className="h-auto w-[205px] select-none object-contain sm:w-[235px] lg:w-[270px]"
@@ -116,102 +145,25 @@ const Footer = () => {
               Download App For
             </h3>
 
-            {/* Mobile app buttons */}
-            <div className="flex flex-col items-center md:hidden">
-              <div className="flex items-center justify-center gap-5">
+            {/* Download app buttons — same list, mobile wraps/centers */}
+            <div className="flex flex-wrap items-center justify-center gap-5">
+              {downloadLinks.map((link, index) => (
                 <a
-                  href="https://play.google.com/"
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Download from Google Play"
+                  key={`${link.label}-${index}`}
+                  href={link.url}
+                  target={link.openInNewTab ? "_blank" : "_self"}
+                  rel={link.openInNewTab ? "noreferrer" : undefined}
+                  aria-label={`Download from ${link.label}`}
                   className="flex h-[40px] w-[135px] cursor-pointer items-center overflow-hidden rounded-[5px] border border-white/15 bg-black transition-all duration-200 hover:-translate-y-0.5 hover:border-white/40 hover:brightness-110"
                 >
                   <img
-                    src={GOOGLE_PLAY}
-                    alt="Get it on Google Play"
+                    src={link.image}
+                    alt={link.label}
                     draggable={false}
                     className="h-full w-full select-none object-contain"
                   />
                 </a>
-
-                <a
-                  href="https://www.apple.com/app-store/"
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Download from Apple App Store"
-                  className="flex h-[40px] w-[135px] cursor-pointer items-center overflow-hidden rounded-[5px] border border-white/15 bg-black transition-all duration-200 hover:-translate-y-0.5 hover:border-white/40 hover:brightness-110"
-                >
-                  <img
-                    src={APPLE_STORE}
-                    alt="Download on the App Store"
-                    draggable={false}
-                    className="h-full w-full select-none object-contain"
-                  />
-                </a>
-              </div>
-
-              <a
-                href="https://play.google.com/"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Download for Android TV"
-                className="mt-[11px] flex h-[40px] w-[137px] cursor-pointer items-center overflow-hidden rounded-[5px] border border-white/15 bg-black transition-all duration-200 hover:-translate-y-0.5 hover:border-white/40 hover:brightness-110"
-              >
-                <img
-                  src={ANDROID_TV}
-                  alt="Android TV"
-                  draggable={false}
-                  className="h-full w-full select-none object-contain"
-                />
-              </a>
-            </div>
-
-            {/* Desktop app buttons */}
-            <div className="hidden items-center gap-5 md:flex">
-              <a
-                href="https://play.google.com/"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Download from Google Play"
-                className="flex h-[40px] w-[136px] cursor-pointer items-center overflow-hidden rounded-[5px] border border-white/15 bg-black transition-all duration-200 hover:-translate-y-0.5 hover:border-white/40 hover:brightness-110"
-              >
-                <img
-                  src={GOOGLE_PLAY}
-                  alt="Get it on Google Play"
-                  draggable={false}
-                  className="h-full w-full select-none object-contain"
-                />
-              </a>
-
-              <a
-                href="https://www.apple.com/app-store/"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Download from Apple App Store"
-                className="flex h-[40px] w-[135px] cursor-pointer items-center overflow-hidden rounded-[5px] border border-white/15 bg-black transition-all duration-200 hover:-translate-y-0.5 hover:border-white/40 hover:brightness-110"
-              >
-                <img
-                  src={APPLE_STORE}
-                  alt="Download on the App Store"
-                  draggable={false}
-                  className="h-full w-full select-none object-contain"
-                />
-              </a>
-
-              <a
-                href="https://play.google.com/"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Download for Android TV"
-                className="flex h-[40px] w-[137px] cursor-pointer items-center overflow-hidden rounded-[5px] border border-white/15 bg-black transition-all duration-200 hover:-translate-y-0.5 hover:border-white/40 hover:brightness-110"
-              >
-                <img
-                  src={ANDROID_TV}
-                  alt="Android TV"
-                  draggable={false}
-                  className="h-full w-full select-none object-contain"
-                />
-              </a>
+              ))}
             </div>
           </div>
 

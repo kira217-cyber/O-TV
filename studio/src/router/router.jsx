@@ -8,6 +8,7 @@ import MyChannel from "../pages/MyChannel/MyChannel";
 import MyVideos from "../pages/MyVideos/MyVideos";
 import UploadVideo from "../pages/UploadVideo/UploadVideo";
 import EditVideo from "../pages/EditVideo/EditVideo";
+import WatchVideo from "../pages/WatchVideo/WatchVideo";
 import Profile from "../pages/Profile/Profile";
 import NotFoundPage from "../pages/NotFoundPage/NotFoundPage";
 
@@ -58,6 +59,14 @@ export const routes = createBrowserRouter([
         element: (
           <PrivateRoute>
             <EditVideo />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: "watch/:id",
+        element: (
+          <PrivateRoute>
+            <WatchVideo />
           </PrivateRoute>
         ),
       },

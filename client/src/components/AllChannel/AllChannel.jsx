@@ -4,6 +4,8 @@ import { NavLink } from "react-router";
 import { A11y, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
+import { useSiteSettings } from "../../hooks/useSiteSettings";
+
 import "swiper/css";
 
 const channels = [
@@ -84,6 +86,10 @@ const channels = [
 const AllChannel = () => {
   const swiperRef = useRef(null);
 
+  const { settings } = useSiteSettings();
+  const sectionTitle =
+    settings?.homeSections?.allChannel?.title || "Unlimited Entertainment";
+
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
@@ -108,7 +114,7 @@ const AllChannel = () => {
       <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 lg:px-10 xl:px-[42px]">
         {/* Section title */}
         <h2 className="text-[22px] font-semibold tracking-[-0.5px] text-white sm:text-[26px] lg:text-[30px]">
-          Unlimited Entertainment
+          {sectionTitle}
         </h2>
 
         {/* Channel slider */}

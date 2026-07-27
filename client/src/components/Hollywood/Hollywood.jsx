@@ -5,14 +5,16 @@ import { A11y, FreeMode, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 import { alignHoverPreview } from "../../utils/alignHoverPreview";
+import { api } from "../../api/axios";
+import { useSiteSettings } from "../../hooks/useSiteSettings";
 
 import "swiper/css";
 import "swiper/css/free-mode";
 
-const HOLLYWOOD_DESKTOP_BACKGROUND =
+const DEFAULT_DESKTOP_BACKGROUND =
   "https://asset.bioscopelive.com/uploads/images/2026/02/02/thumbnail_backgrounds_2ecce0eec8885a0d9356ccf210c01107_goplay_hollywood_drop.png?w=1920&q=75";
 
-const HOLLYWOOD_MOBILE_BACKGROUND =
+const DEFAULT_MOBILE_BACKGROUND =
   "https://asset.bioscopelive.com/uploads/images/2026/04/12/poster_backgrounds_d509fea351217249170da515fa1008ab_goplay_hollywood_phone.png?w=1920&q=75";
 
 const hollywoodImages = [
@@ -100,6 +102,16 @@ const Hollywood = () => {
   const swiperRef = useRef(null);
   const navigate = useNavigate();
 
+  const { settings } = useSiteSettings();
+  const section = settings?.homeSections?.hollywood;
+  const sectionTitle = section?.title || "Hollywood Blockbuster Legends";
+  const desktopBackground = section?.backgroundDesktop
+    ? `${api.defaults.baseURL}${section.backgroundDesktop}`
+    : DEFAULT_DESKTOP_BACKGROUND;
+  const mobileBackground = section?.backgroundMobile
+    ? `${api.defaults.baseURL}${section.backgroundMobile}`
+    : DEFAULT_MOBILE_BACKGROUND;
+
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
@@ -167,12 +179,12 @@ const Hollywood = () => {
           {/* Desktop background */}
           <source
             media="(min-width: 1024px)"
-            srcSet={HOLLYWOOD_DESKTOP_BACKGROUND}
+            srcSet={desktopBackground}
           />
 
           {/* Mobile and tablet background */}
           <img
-            src={HOLLYWOOD_MOBILE_BACKGROUND}
+            src={mobileBackground}
             alt=""
             draggable={false}
             fetchPriority="high"
@@ -188,7 +200,7 @@ const Hollywood = () => {
         {/* Header */}
         <div className="relative z-10 mb-4 flex items-center justify-between gap-4">
           <h2 className="text-[21px] font-semibold tracking-[-0.4px] text-white drop-shadow-md sm:text-[25px] lg:text-[29px]">
-            Hollywood Blockbuster Legends
+            {sectionTitle}
           </h2>
 
           {/* Mobile visible; desktop section hover করলে visible */}

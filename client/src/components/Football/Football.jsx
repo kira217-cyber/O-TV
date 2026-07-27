@@ -5,14 +5,16 @@ import { A11y, FreeMode, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 import { alignHoverPreview } from "../../utils/alignHoverPreview";
+import { api } from "../../api/axios";
+import { useSiteSettings } from "../../hooks/useSiteSettings";
 
 import "swiper/css";
 import "swiper/css/free-mode";
 
-const FOOTBALL_DESKTOP_BACKGROUND =
+const DEFAULT_DESKTOP_BACKGROUND =
   "https://asset.bioscopelive.com/uploads/images/2026/07/21/thumbnail_backgrounds_1bc44929b7ec290e1187d9be8a6bf8af_goplay_upcoming_web.png?w=1920&q=75";
 
-const FOOTBALL_MOBILE_BACKGROUND =
+const DEFAULT_MOBILE_BACKGROUND =
   "https://asset.bioscopelive.com/uploads/images/2026/07/21/poster_backgrounds_0e87771687f96ed877d7af0ecca769fc_goplay_fifa_phone.png?w=1920&q=75";
 
 /*
@@ -130,6 +132,16 @@ const footballItems = [...firstSevenItems, ...secondSevenItems];
 const Football = () => {
   const swiperRef = useRef(null);
 
+  const { settings } = useSiteSettings();
+  const section = settings?.homeSections?.football;
+  const sectionTitle = section?.title || "FIFA Rewind";
+  const desktopBackground = section?.backgroundDesktop
+    ? `${api.defaults.baseURL}${section.backgroundDesktop}`
+    : DEFAULT_DESKTOP_BACKGROUND;
+  const mobileBackground = section?.backgroundMobile
+    ? `${api.defaults.baseURL}${section.backgroundMobile}`
+    : DEFAULT_MOBILE_BACKGROUND;
+
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
@@ -195,8 +207,8 @@ const Football = () => {
       <div
         className="football-background group/football relative mx-auto w-full max-w-[1920px] overflow-x-clip overflow-y-visible rounded-[14px] bg-center bg-no-repeat sm:rounded-[25px] lg:min-h-[625px] lg:rounded-[52px]"
         style={{
-          "--football-mobile-bg": `url("${FOOTBALL_MOBILE_BACKGROUND}")`,
-          "--football-desktop-bg": `url("${FOOTBALL_DESKTOP_BACKGROUND}")`,
+          "--football-mobile-bg": `url("${mobileBackground}")`,
+          "--football-desktop-bg": `url("${desktopBackground}")`,
         }}
       >
         {/* Mobile readability overlay */}
@@ -207,7 +219,7 @@ const Football = () => {
           {/* Header */}
           <div className="mb-3 flex items-center justify-between gap-3 sm:mb-5">
             <h2 className="text-[19px] font-semibold tracking-[-0.4px] text-white sm:text-[25px] lg:text-[30px]">
-              FIFA Rewind
+              {sectionTitle}
             </h2>
 
             {/* Mobile: visible; desktop: section hover করলে visible */}

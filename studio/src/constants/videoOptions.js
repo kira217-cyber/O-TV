@@ -7,6 +7,7 @@ export const CATEGORY_OPTIONS = [
   "Drama",
   "Horror",
   "Thriller",
+  "Sports",
   "Documentary",
   "Educational",
   "Animation",

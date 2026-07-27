@@ -49,7 +49,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="mx-auto max-w-2xl text-white">
+    <div className="mx-auto max-w-7xl text-white">
       <div className="mb-8 flex items-center gap-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#c4b5fd] via-[#8b5cf6] to-[#4338ca] shadow-lg shadow-[#8b5cf6]/30">
           <User className="h-6 w-6 text-white" />

@@ -1,8 +1,12 @@
 import React from "react";
-import ComingSoon from "../../components/ComingSoon/ComingSoon";
+import HomeSectionEditor from "../../components/HomeSectionEditor/HomeSectionEditor";
 
-const ContentFootball = () => {
-  return <ComingSoon title="Football" />;
-};
+const ContentFootball = () => (
+  <HomeSectionEditor
+    sectionKey="football"
+    pageTitle="Football Section"
+    supportsBackground
+  />
+);
 
 export default ContentFootball;

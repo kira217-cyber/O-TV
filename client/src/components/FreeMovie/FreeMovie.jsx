@@ -5,13 +5,15 @@ import { A11y, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 import { alignHoverPreview } from "../../utils/alignHoverPreview";
+import { api } from "../../api/axios";
+import { useSiteSettings } from "../../hooks/useSiteSettings";
 
 import "swiper/css";
 
-const FREE_MOVIE_DESKTOP_BACKGROUND =
+const DEFAULT_DESKTOP_BACKGROUND =
   "https://asset.bioscopelive.com/uploads/images/2026/05/11/thumbnail_backgrounds_28a3a697b1aeef449bb7e55cc1b8192b_goplay_king_of_d_8.png";
 
-const FREE_MOVIE_MOBILE_BACKGROUND =
+const DEFAULT_MOBILE_BACKGROUND =
   "https://asset.bioscopelive.com/uploads/images/2026/05/12/poster_backgrounds_76bd705d7bfc7c6cce5d6f67db691a01_goplay_enjoy_f_for_phone_2.png?w=1920&q=75";
 
 const movieImages = [
@@ -86,6 +88,16 @@ const FreeMovie = () => {
   const swiperRef = useRef(null);
   const navigate = useNavigate();
 
+  const { settings } = useSiteSettings();
+  const section = settings?.homeSections?.freeMovie;
+  const sectionTitle = section?.title || "Shakib Khan's Free Movie";
+  const desktopBackground = section?.backgroundDesktop
+    ? `${api.defaults.baseURL}${section.backgroundDesktop}`
+    : DEFAULT_DESKTOP_BACKGROUND;
+  const mobileBackground = section?.backgroundMobile
+    ? `${api.defaults.baseURL}${section.backgroundMobile}`
+    : DEFAULT_MOBILE_BACKGROUND;
+
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
@@ -153,12 +165,12 @@ const FreeMovie = () => {
           {/* Desktop background */}
           <source
             media="(min-width: 1024px)"
-            srcSet={FREE_MOVIE_DESKTOP_BACKGROUND}
+            srcSet={desktopBackground}
           />
 
           {/* Mobile and tablet background */}
           <img
-            src={FREE_MOVIE_MOBILE_BACKGROUND}
+            src={mobileBackground}
             alt=""
             draggable={false}
             fetchPriority="high"
@@ -174,7 +186,7 @@ const FreeMovie = () => {
         {/* Header */}
         <div className="relative z-10 mb-4 flex items-center justify-between">
           <h2 className="text-[21px] font-semibold tracking-[-0.4px] text-white drop-shadow-md sm:text-[25px] lg:text-[29px]">
-            Shakib Khan&apos;s Free Movie
+            {sectionTitle}
           </h2>
 
           <NavLink

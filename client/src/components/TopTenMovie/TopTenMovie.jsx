@@ -5,20 +5,33 @@ import { useNavigate } from "react-router";
 import { FreeMode, Keyboard, Mousewheel } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
+import { useSiteSettings } from "../../hooks/useSiteSettings";
+
+import number1 from "../../assets/topTenNumbers/number-1.svg";
+import number2 from "../../assets/topTenNumbers/number-2.svg";
+import number3 from "../../assets/topTenNumbers/number-3.svg";
+import number4 from "../../assets/topTenNumbers/number-4.svg";
+import number5 from "../../assets/topTenNumbers/number-5.svg";
+import number6 from "../../assets/topTenNumbers/number-6.svg";
+import number7 from "../../assets/topTenNumbers/number-7.svg";
+import number8 from "../../assets/topTenNumbers/number-8.svg";
+import number9 from "../../assets/topTenNumbers/number-9.svg";
+import number10 from "../../assets/topTenNumbers/number-10.svg";
+
 import "swiper/css";
 import "swiper/css/free-mode";
 
 const numberImages = [
-  "https://www.bioscopeplus.com/images/numbers/web/1.svg?w=480&q=75",
-  "https://www.bioscopeplus.com/images/numbers/small-screen/2.svg?w=828&q=75",
-  "https://www.bioscopeplus.com/images/numbers/small-screen/3.svg?w=480&q=75",
-  "https://www.bioscopeplus.com/images/numbers/small-screen/4.svg?w=480&q=75",
-  "https://www.bioscopeplus.com/images/numbers/web/5.svg?w=828&q=75",
-  "https://www.bioscopeplus.com/images/numbers/web/6.svg?w=480&q=75",
-  "https://www.bioscopeplus.com/images/numbers/web/7.svg?w=480&q=75",
-  "https://www.bioscopeplus.com/images/numbers/web/8.svg?w=828&q=75",
-  "https://www.bioscopeplus.com/images/numbers/web/9.svg?w=480&q=75",
-  "https://www.bioscopeplus.com/images/numbers/web/10.svg?w=828&q=75",
+  number1,
+  number2,
+  number3,
+  number4,
+  number5,
+  number6,
+  number7,
+  number8,
+  number9,
+  number10,
 ];
 
 const movieImages = [
@@ -122,6 +135,9 @@ const topTenMovies = movieInformation.map((movie, index) => ({
 const TopTenMovie = () => {
   const navigate = useNavigate();
 
+  const { settings } = useSiteSettings();
+  const sectionTitle = settings?.homeSections?.topTen?.title || "Top 10 Movies";
+
   const handlePlay = (movie) => {
     navigate(movie.path);
   };
@@ -141,7 +157,7 @@ const TopTenMovie = () => {
       {/* Section title */}
       <div className="mx-auto mb-4 w-full max-w-[1680px] px-4 sm:mb-5 sm:px-8 lg:px-10 xl:px-[120px]">
         <h2 className="text-[21px] font-semibold leading-none text-white sm:text-[25px] lg:text-[28px]">
-          Top 10 Movies
+          {sectionTitle}
         </h2>
       </div>
 

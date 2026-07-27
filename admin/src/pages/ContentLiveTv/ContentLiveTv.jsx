@@ -1,8 +1,8 @@
 import React from "react";
-import ComingSoon from "../../components/ComingSoon/ComingSoon";
+import HomeSectionEditor from "../../components/HomeSectionEditor/HomeSectionEditor";
 
-const ContentLiveTv = () => {
-  return <ComingSoon title="Live TV" />;
-};
+const ContentLiveTv = () => (
+  <HomeSectionEditor sectionKey="liveTv" pageTitle="Live TV Section" />
+);
 
 export default ContentLiveTv;

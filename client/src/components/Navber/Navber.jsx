@@ -3,7 +3,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Search, UserRound, X } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router";
 
-const LOGO_URL =
+import { api } from "../../api/axios";
+import { useSiteSettings } from "../../hooks/useSiteSettings";
+
+const DEFAULT_LOGO_URL =
   "https://asset.bioscopelive.com/uploads/images/2025/07/28/images_d6ce912746f794656d087b55ef04100d_goplay_bios.png?w=560";
 
 const navItems = [
@@ -37,6 +40,11 @@ const Navber = () => {
   const searchInputRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
+
+  const { settings } = useSiteSettings();
+  const logoUrl = settings?.logo
+    ? `${api.defaults.baseURL}${settings.logo}`
+    : DEFAULT_LOGO_URL;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -123,7 +131,7 @@ const Navber = () => {
             className="flex shrink-0 cursor-pointer items-center"
           >
             <img
-              src={LOGO_URL}
+              src={logoUrl}
               alt="O-TV"
               draggable={false}
               className="h-auto w-[162px] select-none object-contain"
@@ -186,7 +194,7 @@ const Navber = () => {
               className="flex shrink-0 cursor-pointer items-center"
             >
               <img
-                src={LOGO_URL}
+                src={logoUrl}
                 alt="O-TV"
                 draggable={false}
                 className="h-auto w-[145px] select-none object-contain"

@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import {
   Users,
-  Wallet,
   HandCoins,
   ShieldCheck,
   LayoutDashboard,
@@ -13,6 +12,7 @@ import {
   BarChart3,
   CalendarDays,
   Clock,
+  Hourglass,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -63,6 +63,19 @@ const DonutChart = ({ data, size = 190, strokeWidth = 24 }) => {
   const total = data.reduce((sum, slice) => sum + slice.value, 0);
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
+
+  if (total === 0) {
+    return (
+      <div
+        className="flex shrink-0 items-center justify-center rounded-full border-4 border-dashed border-white/10 text-center text-xs font-semibold text-slate-500"
+        style={{ width: size, height: size }}
+      >
+        No published
+        <br />
+        videos yet
+      </div>
+    );
+  }
 
   const segments = data.reduce((acc, slice) => {
     const dash = (slice.value / total) * circumference;
@@ -261,30 +274,27 @@ const LiveClockCalendar = () => {
 };
 
 /* =========================================================
-   Demo data — modelled on this project's actual sections
+   Category → color mapping for the donut chart
 ========================================================= */
-const contentDistribution = [
-  { label: "Hollywood", value: 320, color: "#8b5cf6" },
-  { label: "Live TV", value: 260, color: "#22d3ee" },
-  { label: "Free Movie", value: 230, color: "#a855f7" },
-  { label: "Horror", value: 180, color: "#f472b6" },
-  { label: "Football", value: 150, color: "#4338ca" },
-  { label: "Trending", value: 144, color: "#c4b5fd" },
-];
-
-const weeklySignups = [
-  { label: "Mon", value: 182 },
-  { label: "Tue", value: 246 },
-  { label: "Wed", value: 214 },
-  { label: "Thu", value: 298 },
-  { label: "Fri", value: 356 },
-  { label: "Sat", value: 410 },
-  { label: "Sun", value: 332 },
-];
+const CATEGORY_COLORS = {
+  Action: "#8b5cf6",
+  Romance: "#f472b6",
+  Comedy: "#facc15",
+  Drama: "#22d3ee",
+  Horror: "#ef4444",
+  Thriller: "#a855f7",
+  Sports: "#22c55e",
+  Documentary: "#4338ca",
+  Educational: "#0ea5e9",
+  Animation: "#fb923c",
+  Other: "#c4b5fd",
+};
 
 const Home = () => {
   const admin = useSelector(selectAdmin);
   const [totalAdmins, setTotalAdmins] = useState(null);
+  const [userStats, setUserStats] = useState(null);
+  const [videoStats, setVideoStats] = useState(null);
 
   useEffect(() => {
     if (admin?.role !== "mother") return;
@@ -302,8 +312,35 @@ const Home = () => {
     loadAdmins();
   }, [admin?.role]);
 
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const [usersRes, videosRes] = await Promise.all([
+          api.get("/api/admin/users/stats"),
+          api.get("/api/admin/videos/stats"),
+        ]);
+
+        setUserStats(usersRes?.data?.data || null);
+        setVideoStats(videosRes?.data?.data || null);
+      } catch {
+        setUserStats(null);
+        setVideoStats(null);
+      }
+    };
+
+    loadStats();
+  }, []);
+
+  const contentDistribution = (videoStats?.byCategory || []).map((entry) => ({
+    label: entry.category,
+    value: entry.count,
+    color: CATEGORY_COLORS[entry.category] || "#8b5cf6",
+  }));
+
+  const weeklySignups = userStats?.weeklySignups || [];
+
   return (
-    <div className="text-white">
+    <div className="mx-auto max-w-7xl text-white">
       <div className="mb-8 flex items-center gap-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#c4b5fd] via-[#8b5cf6] to-[#4338ca] shadow-lg shadow-[#8b5cf6]/30">
           <LayoutDashboard className="h-6 w-6 text-white" />
@@ -322,10 +359,9 @@ const Home = () => {
 
       <p className="mb-6 max-w-3xl text-sm leading-relaxed text-slate-400">
         A quick, at-a-glance summary of how O-TV is performing — your
-        audience, your content library, and your platform's financial
-        activity, all in one place. The figures below are sample data for
-        preview; live numbers will appear automatically once each backend
-        API is connected.
+        audience, your content library, and platform activity, all in one
+        place. Revenue is not yet tracked, so that figure remains a preview
+        placeholder until payments are wired up.
       </p>
 
       {/* 6 stat cards */}
@@ -333,48 +369,40 @@ const Home = () => {
         <StatCard
           icon={<Users className="h-7 w-7 text-white" />}
           label="Total Users"
-          value="12,480"
+          value={userStats?.total ?? "—"}
           accent="bg-gradient-to-br from-[#a855f7] to-[#7c3aed]"
-          trend="+8.2% this week"
-          trendUp
         />
         <StatCard
           icon={<Film className="h-7 w-7 text-white" />}
-          label="Total Content"
-          value="1,284"
+          label="Total Videos"
+          value={videoStats?.total ?? "—"}
           accent="bg-gradient-to-br from-[#c4b5fd] via-[#8b5cf6] to-[#4338ca]"
-          trend="+36 new this month"
-          trendUp
+        />
+        <StatCard
+          icon={<Hourglass className="h-7 w-7 text-white" />}
+          label="Pending Review"
+          value={videoStats?.pending ?? "—"}
+          accent="bg-gradient-to-br from-[#a855f7] to-[#7c3aed]"
         />
         <StatCard
           icon={<ShieldCheck className="h-7 w-7 text-white" />}
           label="Total Admins"
-          value={totalAdmins ?? "6"}
-          accent="bg-gradient-to-br from-[#a855f7] to-[#7c3aed]"
-        />
-        <StatCard
-          icon={<Wallet className="h-7 w-7 text-white" />}
-          label="Pending Deposits"
-          value="৳ 4,28,500"
+          value={totalAdmins ?? "—"}
           accent="bg-gradient-to-br from-[#c4b5fd] via-[#8b5cf6] to-[#4338ca]"
-          trend="62 requests waiting"
-          trendUp={false}
         />
         <StatCard
           icon={<HandCoins className="h-7 w-7 text-white" />}
-          label="Pending Withdraws"
-          value="৳ 1,56,200"
+          label="Active Videos"
+          value={videoStats?.active ?? "—"}
           accent="bg-gradient-to-br from-[#a855f7] to-[#7c3aed]"
-          trend="24 requests waiting"
-          trendUp={false}
         />
         <StatCard
           icon={<TrendingUp className="h-7 w-7 text-white" />}
           label="Monthly Revenue"
-          value="৳ 12,45,000"
+          value="৳ 0"
           accent="bg-gradient-to-br from-[#c4b5fd] via-[#8b5cf6] to-[#4338ca]"
-          trend="+14.6% vs last month"
-          trendUp
+          trend="Not tracked yet"
+          trendUp={false}
         />
       </div>
 
@@ -389,29 +417,31 @@ const Home = () => {
             </h2>
           </div>
           <p className="mb-5 text-xs text-slate-400">
-            Share of published titles across each category.
+            Share of live (approved) videos across each category.
           </p>
 
           <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-around">
             <DonutChart data={contentDistribution} />
 
-            <ul className="w-full space-y-2.5 sm:w-auto">
-              {contentDistribution.map((slice) => (
-                <li
-                  key={slice.label}
-                  className="flex items-center justify-between gap-6 text-sm"
-                >
-                  <span className="flex items-center gap-2 font-semibold text-slate-300">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: slice.color }}
-                    />
-                    {slice.label}
-                  </span>
-                  <span className="font-bold text-white">{slice.value}</span>
-                </li>
-              ))}
-            </ul>
+            {contentDistribution.length > 0 && (
+              <ul className="w-full space-y-2.5 sm:w-auto">
+                {contentDistribution.map((slice) => (
+                  <li
+                    key={slice.label}
+                    className="flex items-center justify-between gap-6 text-sm"
+                  >
+                    <span className="flex items-center gap-2 font-semibold text-slate-300">
+                      <span
+                        className="h-2.5 w-2.5 rounded-full"
+                        style={{ backgroundColor: slice.color }}
+                      />
+                      {slice.label}
+                    </span>
+                    <span className="font-bold text-white">{slice.value}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 
@@ -424,16 +454,16 @@ const Home = () => {
             </h2>
           </div>
           <p className="mb-5 text-xs text-slate-400">
-            New user registrations over the last 7 days.
+            New studio creator registrations over the last 7 days.
           </p>
 
-          <BarChart data={weeklySignups} />
-
-          <p className="mt-5 text-xs leading-relaxed text-slate-400">
-            Signups are trending upward heading into the weekend — Saturday
-            was the strongest day with{" "}
-            <span className="font-bold text-white">410 new users</span>.
-          </p>
+          {weeklySignups.length > 0 ? (
+            <BarChart data={weeklySignups} />
+          ) : (
+            <div className="flex h-44 items-center justify-center text-xs font-semibold text-slate-500">
+              Loading...
+            </div>
+          )}
         </div>
 
         {/* Live clock + calendar */}

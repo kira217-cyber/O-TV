@@ -16,7 +16,7 @@ const VIDEO_MIME_TYPES = [
 const MAX_VIDEO_SIZE_MB = Number(process.env.BUNNY_MAX_VIDEO_SIZE_MB) || 2048;
 
 const fileFilter = (req, file, cb) => {
-  if (file.fieldname === "thumbnail") {
+  if (file.fieldname === "thumbnailLandscape" || file.fieldname === "thumbnailPortrait") {
     if (!IMAGE_MIME_TYPES.includes(file.mimetype)) {
       return cb(
         new Error("Thumbnail must be PNG, JPG, JPEG, WEBP, or GIF"),
@@ -46,7 +46,8 @@ const uploadVideo = multer({
 });
 
 export const uploadVideoFields = uploadVideo.fields([
-  { name: "thumbnail", maxCount: 1 },
+  { name: "thumbnailLandscape", maxCount: 1 },
+  { name: "thumbnailPortrait", maxCount: 1 },
   { name: "video", maxCount: 1 },
   { name: "trailer", maxCount: 1 },
 ]);

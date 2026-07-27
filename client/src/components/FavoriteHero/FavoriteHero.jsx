@@ -4,6 +4,9 @@ import { NavLink } from "react-router";
 import { A11y, FreeMode, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
+import { api } from "../../api/axios";
+import { useSiteSettings } from "../../hooks/useSiteSettings";
+
 import "swiper/css";
 import "swiper/css/free-mode";
 
@@ -76,6 +79,20 @@ const heroes = [
 const FavoriteHero = () => {
   const swiperRef = useRef(null);
 
+  const { settings } = useSiteSettings();
+  const sectionTitle =
+    settings?.homeSections?.favoriteHero?.title || "Pick Your Favorite Hero";
+
+  const displayedHeroes =
+    settings?.heroSlides?.length > 0
+      ? settings.heroSlides.map((slide, index) => ({
+          id: slide._id || slide.id || index,
+          name: slide.name || "Hero",
+          image: `${api.defaults.baseURL}${slide.image}`,
+          path: "#",
+        }))
+      : heroes;
+
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
@@ -101,7 +118,7 @@ const FavoriteHero = () => {
         {/* Header */}
         <div className="mb-4 flex items-center justify-between gap-4 sm:mb-5">
           <h2 className="text-[22px] font-semibold tracking-[-0.5px] text-white sm:text-[26px] lg:text-[30px]">
-            Pick Your Favorite Hero
+            {sectionTitle}
           </h2>
 
           {/* Mobile: visible; desktop: section hover করলে visible */}
@@ -205,7 +222,7 @@ const FavoriteHero = () => {
             }}
             className="favorite-hero-swiper"
           >
-            {heroes.map((hero, index) => (
+            {displayedHeroes.map((hero, index) => (
               <SwiperSlide key={hero.id} className="favorite-hero-slide">
                 <NavLink
                   to={hero.path}

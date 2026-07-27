@@ -1,8 +1,8 @@
 import React from "react";
-import ComingSoon from "../../components/ComingSoon/ComingSoon";
+import HomeSectionEditor from "../../components/HomeSectionEditor/HomeSectionEditor";
 
-const ContentTrending = () => {
-  return <ComingSoon title="Trending" />;
-};
+const ContentTrending = () => (
+  <HomeSectionEditor sectionKey="trending" pageTitle="Trending Section" />
+);
 
 export default ContentTrending;

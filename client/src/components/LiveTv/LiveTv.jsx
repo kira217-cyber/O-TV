@@ -4,6 +4,8 @@ import { NavLink } from "react-router";
 import { A11y, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
+import { useSiteSettings } from "../../hooks/useSiteSettings";
+
 import "swiper/css";
 
 const liveTvChannels = [
@@ -108,6 +110,9 @@ const liveTvChannels = [
 const LiveTv = () => {
   const swiperRef = useRef(null);
 
+  const { settings } = useSiteSettings();
+  const sectionTitle = settings?.homeSections?.liveTv?.title || "Live TV";
+
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
@@ -132,7 +137,7 @@ const LiveTv = () => {
       <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 lg:px-10 xl:px-[42px]">
         {/* Section title */}
         <h2 className="text-[22px] font-semibold tracking-[-0.5px] text-white sm:text-[26px] lg:text-[30px]">
-          Live TV
+          {sectionTitle}
         </h2>
 
         {/* Live TV slider */}

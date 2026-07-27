@@ -17,6 +17,7 @@ export const publicVideo = (video, { includeOwner = false } = {}) => {
     trailer: normalizeTrailer(video.trailer),
     status: video.status,
     rejectionReason: video.rejectionReason,
+    views: video.views,
     createdAt: video.createdAt,
     updatedAt: video.updatedAt,
   };

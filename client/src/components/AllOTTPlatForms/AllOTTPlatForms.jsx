@@ -12,6 +12,7 @@ import { A11y, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 import { alignHoverPreview } from "../../utils/alignHoverPreview";
+import { useSiteSettings } from "../../hooks/useSiteSettings";
 
 import "swiper/css";
 
@@ -142,6 +143,9 @@ const allMovies = movieDetails.map((movie, index) => ({
 const AllOTTPlatForms = () => {
   const swiperRef = useRef(null);
 
+  const { settings } = useSiteSettings();
+  const sectionTitle = settings?.homeSections?.allOtt?.title || "All OTT Platforms";
+
   const [activePlatform, setActivePlatform] = useState("chorki");
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
@@ -227,7 +231,7 @@ const AllOTTPlatForms = () => {
       <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 lg:px-10 xl:px-[42px]">
         {/* Title */}
         <h2 className="text-[22px] font-semibold tracking-[-0.4px] text-white sm:text-[26px] lg:text-[30px]">
-          All OTT Platforms
+          {sectionTitle}
         </h2>
 
         {/* OTT platform navigation */}

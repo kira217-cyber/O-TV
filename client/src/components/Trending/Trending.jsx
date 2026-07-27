@@ -5,6 +5,7 @@ import { A11y, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 import { alignHoverPreview } from "../../utils/alignHoverPreview";
+import { useSiteSettings } from "../../hooks/useSiteSettings";
 
 import "swiper/css";
 
@@ -120,6 +121,9 @@ const trendingItems = [...firstSevenItems, ...secondSevenItems];
 const Trending = () => {
   const swiperRef = useRef(null);
 
+  const { settings } = useSiteSettings();
+  const sectionTitle = settings?.homeSections?.trending?.title || "Trending";
+
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
@@ -186,11 +190,11 @@ const Trending = () => {
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-[22px] font-semibold tracking-[-0.5px] text-white sm:text-[26px] lg:text-[30px]">
-            <span>Trending</span>
+            <span>{sectionTitle}</span>
 
             <span
               role="img"
-              aria-label="Trending"
+              aria-label={sectionTitle}
               className="text-[21px] sm:text-[24px]"
             >
               📈

@@ -1,8 +1,8 @@
 import React from "react";
-import ComingSoon from "../../components/ComingSoon/ComingSoon";
+import HomeSectionEditor from "../../components/HomeSectionEditor/HomeSectionEditor";
 
-const ContentAllOtt = () => {
-  return <ComingSoon title="All OTT Platforms" />;
-};
+const ContentAllOtt = () => (
+  <HomeSectionEditor sectionKey="allOtt" pageTitle="All OTT Platforms Section" />
+);
 
 export default ContentAllOtt;

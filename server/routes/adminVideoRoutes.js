@@ -23,6 +23,38 @@ const DEFAULT_PAGE_SIZE = 30;
 const STATUS_VALUES = ["pending", "active", "rejected"];
 
 /* =========================
+   Video Stats (for the admin dashboard)
+========================= */
+router.get("/stats", protectAdmin, async (req, res) => {
+  try {
+    const [total, pending, active, rejected, byCategoryAgg] = await Promise.all([
+      Video.countDocuments({}),
+      Video.countDocuments({ status: "pending" }),
+      Video.countDocuments({ status: "active" }),
+      Video.countDocuments({ status: "rejected" }),
+      Video.aggregate([
+        { $match: { status: "active" } },
+        { $group: { _id: "$category", count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+      ]),
+    ]);
+
+    return successResponse(res, "Stats loaded", {
+      total,
+      pending,
+      active,
+      rejected,
+      byCategory: byCategoryAgg.map((entry) => ({
+        category: entry._id,
+        count: entry.count,
+      })),
+    });
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+});
+
+/* =========================
    List / Search / Filter Videos (paginated)
 ========================= */
 router.get("/", protectAdmin, async (req, res) => {
@@ -130,7 +162,8 @@ router.put(
   handleUpload(uploadVideoFields),
   async (req, res) => {
     const files = req.files || {};
-    const thumbnailFile = files.thumbnail?.[0];
+    const landscapeFile = files.thumbnailLandscape?.[0];
+    const portraitFile = files.thumbnailPortrait?.[0];
     const videoFile = files.video?.[0];
     const trailerFile = files.trailer?.[0];
 
@@ -141,7 +174,8 @@ router.put(
       }
     };
 
-    let oldThumbnail = null;
+    let oldLandscape = null;
+    let oldPortrait = null;
     let oldVideoFileName = null;
     let oldTrailerFileName = null;
 
@@ -166,16 +200,32 @@ router.put(
         return errorResponse(res, "Invalid category", 400);
       }
 
-      if (thumbnailFile) {
-        if (thumbnailFile.size > MAX_THUMBNAIL_SIZE) {
+      if (typeof video.thumbnail !== "object" || video.thumbnail === null) {
+        video.thumbnail = {};
+      }
+
+      if (landscapeFile) {
+        if (landscapeFile.size > MAX_THUMBNAIL_SIZE) {
           await rollback();
           return errorResponse(res, "Thumbnail must be 20MB or smaller", 400);
         }
 
-        const newThumbnailPath = await saveThumbnail(thumbnailFile);
-        rollbackActions.push(async () => deleteLocalFile(newThumbnailPath));
-        oldThumbnail = video.thumbnail;
-        video.thumbnail = newThumbnailPath;
+        const newLandscapePath = await saveThumbnail(landscapeFile);
+        rollbackActions.push(async () => deleteLocalFile(newLandscapePath));
+        oldLandscape = video.thumbnail?.landscape;
+        video.thumbnail.landscape = newLandscapePath;
+      }
+
+      if (portraitFile) {
+        if (portraitFile.size > MAX_THUMBNAIL_SIZE) {
+          await rollback();
+          return errorResponse(res, "Thumbnail must be 20MB or smaller", 400);
+        }
+
+        const newPortraitPath = await saveThumbnail(portraitFile);
+        rollbackActions.push(async () => deleteLocalFile(newPortraitPath));
+        oldPortrait = video.thumbnail?.portrait;
+        video.thumbnail.portrait = newPortraitPath;
       }
 
       if (videoFile) {
@@ -216,7 +266,8 @@ router.put(
 
       await video.save();
 
-      if (oldThumbnail) deleteLocalFile(oldThumbnail);
+      if (oldLandscape) deleteLocalFile(oldLandscape);
+      if (oldPortrait) deleteLocalFile(oldPortrait);
       if (oldVideoFileName) await deleteFromBunny(oldVideoFileName);
       if (oldTrailerFileName) await deleteFromBunny(oldTrailerFileName);
 
@@ -241,7 +292,8 @@ router.delete("/:id", protectAdmin, async (req, res) => {
       return errorResponse(res, "Video not found", 404);
     }
 
-    deleteLocalFile(video.thumbnail);
+    deleteLocalFile(video.thumbnail?.landscape);
+    deleteLocalFile(video.thumbnail?.portrait);
     await deleteFromBunny(video.video?.fileName);
     if (video.trailer?.fileName) await deleteFromBunny(video.trailer.fileName);
 
