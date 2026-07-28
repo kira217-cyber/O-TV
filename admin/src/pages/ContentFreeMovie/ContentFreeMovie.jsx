@@ -6,6 +6,7 @@ const ContentFreeMovie = () => (
     sectionKey="freeMovie"
     pageTitle="Free Movie Section"
     supportsBackground
+    promotable
   />
 );
 

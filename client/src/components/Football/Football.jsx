@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Play, Plus, Share2 } from "lucide-react";
-import { NavLink } from "react-router";
+import { NavLink, useNavigate } from "react-router";
 import { A11y, FreeMode, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
@@ -131,6 +131,7 @@ const footballItems = [...firstSevenItems, ...secondSevenItems];
 
 const Football = () => {
   const swiperRef = useRef(null);
+  const navigate = useNavigate();
 
   const { settings } = useSiteSettings();
   const section = settings?.homeSections?.football;
@@ -141,6 +142,23 @@ const Football = () => {
   const mobileBackground = section?.backgroundMobile
     ? `${api.defaults.baseURL}${section.backgroundMobile}`
     : DEFAULT_MOBILE_BACKGROUND;
+
+  const promoted = settings?.promotedVideos?.football;
+  const displayedItems =
+    promoted?.length > 0
+      ? promoted.map((video) => ({
+          id: video.id,
+          title: video.title,
+          shortTitle: video.title,
+          round: video.channelName,
+          category: video.category,
+          description: video.description || video.channelName,
+          image: `${api.defaults.baseURL}${video.thumbnail?.portrait}`,
+          hoverImage: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
+          path: `/watch/${video.id}`,
+          isReal: true,
+        }))
+      : footballItems;
 
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
@@ -164,7 +182,7 @@ const Football = () => {
     event.preventDefault();
     event.stopPropagation();
 
-    console.log("Play:", item.path);
+    navigate(item.path);
   };
 
   const handleAddToList = (event, item) => {
@@ -330,7 +348,7 @@ const Football = () => {
               }}
               className="football-swiper"
             >
-              {footballItems.map((item, index) => (
+              {displayedItems.map((item, index) => (
                 <SwiperSlide key={item.id} className="football-card-slide">
                   <div
                     className="group/card relative w-full cursor-pointer"
@@ -361,16 +379,18 @@ const Football = () => {
                             className="h-full w-full select-none object-cover"
                           />
 
-                          <span className="absolute right-1.5 top-1.5 z-10 rounded-[3px] bg-[#5ce8ef] px-1.5 py-[4px] text-[7px] font-semibold leading-none text-[#063238] sm:right-2 sm:top-2 sm:px-2 sm:text-[9px] lg:text-[10px]">
-                            Replay
-                          </span>
+                          {!item.isReal && (
+                            <span className="absolute right-1.5 top-1.5 z-10 rounded-[3px] bg-[#5ce8ef] px-1.5 py-[4px] text-[7px] font-semibold leading-none text-[#063238] sm:right-2 sm:top-2 sm:px-2 sm:text-[9px] lg:text-[10px]">
+                              Replay
+                            </span>
+                          )}
                         </div>
 
                         <h3
                           title={item.title}
                           className="mt-[6px] truncate px-0.5 text-center text-[9px] font-semibold text-white sm:text-[11px] lg:text-[12px]"
                         >
-                          {item.shortTitle} | FIFA World Cup
+                          {item.isReal ? item.title : `${item.shortTitle} | FIFA World Cup`}
                         </h3>
                       </article>
                     </NavLink>
@@ -390,9 +410,11 @@ const Football = () => {
                           className="h-full w-full select-none object-cover transition-transform duration-500 hover:scale-[1.03]"
                         />
 
-                        <span className="absolute right-3 top-3 rounded-[4px] bg-[#5ce8ef] px-2.5 py-[5px] text-[10px] font-semibold text-[#063238]">
-                          Replay
-                        </span>
+                        {!item.isReal && (
+                          <span className="absolute right-3 top-3 rounded-[4px] bg-[#5ce8ef] px-2.5 py-[5px] text-[10px] font-semibold text-[#063238]">
+                            Replay
+                          </span>
+                        )}
                       </NavLink>
 
                       <div className="px-5 pb-5 pt-4">

@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import { ImageUp, Info, Layers, Save } from "lucide-react";
 
 import { api } from "../../api/axios";
+import PromotedVideosPanel from "../PromotedVideosPanel/PromotedVideosPanel";
 
 const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
 const MAX_SIZE = 20 * 1024 * 1024;
@@ -61,6 +62,7 @@ const HomeSectionEditor = ({
   pageTitle,
   description,
   supportsBackground = false,
+  promotable = false,
 }) => {
   const [section, setSection] = useState(null);
   const [title, setTitle] = useState("");
@@ -235,6 +237,8 @@ const HomeSectionEditor = ({
           </button>
         </form>
       )}
+
+      {promotable && <PromotedVideosPanel sectionKey={sectionKey} />}
     </div>
   );
 };

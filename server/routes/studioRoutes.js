@@ -295,6 +295,7 @@ router.put(
       user.channel = {
         name: name.trim(),
         logo: req.file ? `/uploads/${req.file.filename}` : previousLogo || null,
+        featured: user.channel?.featured || false,
       };
 
       await user.save();

@@ -45,6 +45,10 @@ const studioUserSchema = new mongoose.Schema(
         type: String,
         default: null,
       },
+      featured: {
+        type: Boolean,
+        default: false,
+      },
     },
 
     tokenVersion: {

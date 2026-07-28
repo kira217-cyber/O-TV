@@ -10,6 +10,7 @@ import {
   FaVideo,
   FaCloudUploadAlt,
   FaTv,
+  FaBullhorn,
 } from "react-icons/fa";
 import { RxHamburgerMenu } from "react-icons/rx";
 import { motion } from "framer-motion";
@@ -22,6 +23,7 @@ const menuItems = [
   { to: "/my-channel", icon: <FaTv />, text: "My Channel" },
   { to: "/my-videos", icon: <FaVideo />, text: "My Videos" },
   { to: "/upload-video", icon: <FaCloudUploadAlt />, text: "Upload Video" },
+  { to: "/promote-video", icon: <FaBullhorn />, text: "Promotion Video" },
 ];
 
 const Sidebar = () => {

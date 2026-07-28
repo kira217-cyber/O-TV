@@ -7,12 +7,13 @@ import {
   Plus,
   Share2,
 } from "lucide-react";
-import { NavLink } from "react-router";
+import { NavLink, useNavigate } from "react-router";
 import { A11y, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 import { alignHoverPreview } from "../../utils/alignHoverPreview";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
+import { api } from "../../api/axios";
 
 import "swiper/css";
 
@@ -142,9 +143,11 @@ const allMovies = movieDetails.map((movie, index) => ({
 
 const AllOTTPlatForms = () => {
   const swiperRef = useRef(null);
+  const navigate = useNavigate();
 
   const { settings } = useSiteSettings();
   const sectionTitle = settings?.homeSections?.allOtt?.title || "All OTT Platforms";
+  const promoted = settings?.promotedVideos?.allOtt;
 
   const [activePlatform, setActivePlatform] = useState("chorki");
   const [isBeginning, setIsBeginning] = useState(true);
@@ -155,6 +158,20 @@ const AllOTTPlatForms = () => {
     ottPlatforms[0];
 
   const displayedMovies = useMemo(() => {
+    if (promoted?.length > 0) {
+      return promoted.map((video) => ({
+        id: video.id,
+        title: video.title,
+        category: video.category,
+        badge: "",
+        description: video.description || video.channelName,
+        image: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
+        hoverImage: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
+        path: `/watch/${video.id}`,
+        displayId: `real-${video.id}`,
+      }));
+    }
+
     const platformIndex = ottPlatforms.findIndex(
       (platform) => platform.id === activePlatform,
     );
@@ -167,7 +184,7 @@ const AllOTTPlatForms = () => {
         displayId: `${activePlatform}-${movie.id}-${index}`,
       }),
     );
-  }, [activePlatform]);
+  }, [activePlatform, promoted]);
 
   const updateNavigation = (swiper) => {
     if (!swiper) return;
@@ -188,7 +205,7 @@ const AllOTTPlatForms = () => {
     event.preventDefault();
     event.stopPropagation();
 
-    console.log("Play:", movie.path);
+    navigate(movie.path);
   };
 
   const handleAddToList = (event, movie) => {

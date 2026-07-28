@@ -7,7 +7,7 @@ import BottomNavbar from "../components/BottomNavbar/BottomNavbar";
 
 const RootLayout = () => {
   return (
-    <div className="">
+    <div className="bg-[#111618]">
       <Navber />
       <Outlet />
       <Footer />

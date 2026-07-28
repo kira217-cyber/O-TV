@@ -6,6 +6,7 @@ import { FreeMode, Keyboard, Mousewheel } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 import { useSiteSettings } from "../../hooks/useSiteSettings";
+import { api } from "../../api/axios";
 
 import number1 from "../../assets/topTenNumbers/number-1.svg";
 import number2 from "../../assets/topTenNumbers/number-2.svg";
@@ -138,6 +139,23 @@ const TopTenMovie = () => {
   const { settings } = useSiteSettings();
   const sectionTitle = settings?.homeSections?.topTen?.title || "Top 10 Movies";
 
+  const promoted = settings?.promotedVideos?.topTen;
+  const displayedMovies =
+    promoted?.length > 0
+      ? promoted.slice(0, 10).map((video, index) => ({
+          id: video.id,
+          rank: index + 1,
+          title: video.title,
+          duration: video.duration,
+          year: "",
+          rating: video.maturityRating,
+          path: `/watch/${video.id}`,
+          exclusive: false,
+          numberImage: numberImages[index],
+          image: `${api.defaults.baseURL}${video.thumbnail?.portrait}`,
+        }))
+      : topTenMovies;
+
   const handlePlay = (movie) => {
     navigate(movie.path);
   };
@@ -194,7 +212,7 @@ const TopTenMovie = () => {
           }}
           className="top-ten-swiper !overflow-visible"
         >
-          {topTenMovies.map((movie) => (
+          {displayedMovies.map((movie) => (
             <SwiperSlide
               key={movie.id}
               className="top-ten-slide !h-auto !w-[190px] sm:!w-[240px] lg:!w-[310px] xl:!w-[320px]"
@@ -253,8 +271,12 @@ const TopTenMovie = () => {
 
                       <span className="mt-1 flex items-center gap-1.5 text-[8px] font-medium text-white/80 sm:text-[9px] lg:text-[10px]">
                         <span>{movie.duration}</span>
-                        <span>•</span>
-                        <span>{movie.year}</span>
+                        {movie.year && (
+                          <>
+                            <span>•</span>
+                            <span>{movie.year}</span>
+                          </>
+                        )}
                         <span className="rounded-[2px] border border-white/40 px-1">
                           {movie.rating}
                         </span>

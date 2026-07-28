@@ -13,3 +13,14 @@ export const CATEGORY_OPTIONS = [
   "Animation",
   "Other",
 ];
+
+export const PROMOTABLE_SECTIONS = [
+  { key: "slider", label: "Slider" },
+  { key: "trending", label: "Trending" },
+  { key: "freeMovie", label: "Free Movie" },
+  { key: "topTen", label: "Top 10 Movies" },
+  { key: "allOtt", label: "All OTT Platforms" },
+  { key: "football", label: "Football" },
+  { key: "hollywood", label: "Hollywood" },
+  { key: "horror", label: "Horror" },
+];

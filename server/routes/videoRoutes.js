@@ -20,6 +20,7 @@ import { publicVideo } from "../utils/videoSerializer.js";
 const router = express.Router();
 
 const DEFAULT_PAGE_SIZE = 30;
+const STATUS_VALUES = ["pending", "active", "rejected"];
 
 /* =========================
    Create Video (upload -> pending review)
@@ -139,12 +140,16 @@ router.post(
 ========================= */
 router.get("/", protectStudioUser, async (req, res) => {
   try {
-    const { search, page: pageQuery, limit: limitQuery } = req.query || {};
+    const { search, status, page: pageQuery, limit: limitQuery } = req.query || {};
 
     const filter = { studioUser: req.studioUser._id };
 
     if (typeof search === "string" && search.trim()) {
       filter.title = new RegExp(search.trim(), "i");
+    }
+
+    if (typeof status === "string" && STATUS_VALUES.includes(status)) {
+      filter.status = status;
     }
 
     const page = Math.max(1, parseInt(pageQuery, 10) || 1);

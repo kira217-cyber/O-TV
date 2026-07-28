@@ -6,6 +6,7 @@ const ContentHollywood = () => (
     sectionKey="hollywood"
     pageTitle="Hollywood Section"
     supportsBackground
+    promotable
   />
 );
 

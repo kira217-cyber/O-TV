@@ -6,6 +6,7 @@ const ContentFootball = () => (
     sectionKey="football"
     pageTitle="Football Section"
     supportsBackground
+    promotable
   />
 );
 

@@ -23,6 +23,8 @@ import {
   FaFilm,
   FaGlobe,
   FaVideo,
+  FaCloudUploadAlt,
+  FaBullhorn,
 } from "react-icons/fa";
 import { FaNotesMedical } from "react-icons/fa6";
 import { IoFootstepsOutline } from "react-icons/io5";
@@ -86,6 +88,18 @@ const Sidebar = () => {
         to: "/videos",
         icon: <FaVideo />,
         text: "Video Approvals",
+      },
+      {
+        key: "upload-video",
+        to: "/upload-video",
+        icon: <FaCloudUploadAlt />,
+        text: "Upload Video",
+      },
+      {
+        key: "promotion-requests",
+        to: "/promotion-requests",
+        icon: <FaBullhorn />,
+        text: "Promotion Requests",
       },
       {
         key: "__mother__",

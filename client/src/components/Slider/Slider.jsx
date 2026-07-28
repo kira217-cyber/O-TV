@@ -1,8 +1,12 @@
 import React, { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Info, Play, Plus, VolumeX } from "lucide-react";
+import { useNavigate } from "react-router";
 import { Autoplay, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
+
+import { api } from "../../api/axios";
+import { useSiteSettings } from "../../hooks/useSiteSettings";
 
 import "swiper/css";
 
@@ -102,11 +106,27 @@ const sliderItems = [
 
 const Slider = () => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const navigate = useNavigate();
+
+  const { settings } = useSiteSettings();
+  const promoted = settings?.promotedVideos?.slider;
+  const displayedItems =
+    promoted?.length > 0
+      ? promoted.map((video) => ({
+          id: video.id,
+          title: video.title,
+          desktopImage: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
+          mobileImage: `${api.defaults.baseURL}${video.thumbnail?.portrait}`,
+          duration: video.duration,
+          year: "",
+          rating: video.maturityRating,
+          exclusive: false,
+          path: `/watch/${video.id}`,
+        }))
+      : sliderItems;
 
   const handlePlay = (item) => {
-    // React Router ব্যবহার করলে:
-    // navigate(item.path);
-    console.log("Play:", item.path);
+    navigate(item.path);
   };
 
   const handleAddToList = (item) => {
@@ -114,7 +134,7 @@ const Slider = () => {
   };
 
   const handleDetails = (item) => {
-    console.log("View details:", item.id);
+    navigate(item.path);
   };
 
   const handleMute = (item) => {
@@ -156,7 +176,7 @@ const Slider = () => {
         }}
         className="bioscope-slider w-full"
       >
-        {sliderItems.map((item, index) => (
+        {displayedItems.map((item, index) => (
           <SwiperSlide
             key={item.id}
             className="bioscope-slide cursor-grab overflow-hidden rounded-[13px] active:cursor-grabbing lg:rounded-[17px]"

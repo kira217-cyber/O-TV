@@ -5,6 +5,7 @@ import { A11y, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 import { useSiteSettings } from "../../hooks/useSiteSettings";
+import { api } from "../../api/axios";
 
 import "swiper/css";
 
@@ -90,6 +91,18 @@ const AllChannel = () => {
   const sectionTitle =
     settings?.homeSections?.allChannel?.title || "Unlimited Entertainment";
 
+  const featuredChannels = settings?.channels?.filter((channel) => channel.logo);
+  const displayedChannels =
+    featuredChannels?.length > 0
+      ? featuredChannels.map((channel) => ({
+          id: channel.id,
+          name: channel.name,
+          image: `${api.defaults.baseURL}${channel.logo}`,
+          path: `/channel/${channel.id}`,
+          exclusive: false,
+        }))
+      : channels;
+
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
@@ -171,7 +184,7 @@ const AllChannel = () => {
             }}
             className="all-channel-swiper"
           >
-            {channels.map((channel, index) => (
+            {displayedChannels.map((channel, index) => (
               <SwiperSlide key={channel.id} className="all-channel-slide">
                 <NavLink
                   to={channel.path}

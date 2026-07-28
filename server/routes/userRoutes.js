@@ -70,7 +70,12 @@ router.get("/", protectAdmin, async (req, res) => {
 
     if (typeof search === "string" && search.trim()) {
       const regex = new RegExp(search.trim(), "i");
-      filter.$or = [{ fullName: regex }, { email: regex }, { phone: regex }];
+      filter.$or = [
+        { fullName: regex },
+        { email: regex },
+        { phone: regex },
+        { "channel.name": regex },
+      ];
     }
 
     const page = Math.max(1, parseInt(pageQuery, 10) || 1);
@@ -256,6 +261,7 @@ router.put(
       user.channel = {
         name: typeof name === "string" && name.trim() ? name.trim() : user.channel?.name,
         logo: req.file ? `/uploads/${req.file.filename}` : previousLogo || null,
+        featured: user.channel?.featured || false,
       };
 
       await user.save();
@@ -273,5 +279,33 @@ router.put(
     }
   },
 );
+
+/* =========================
+   Toggle a Channel's "Featured" visibility on the client AllChannel section
+========================= */
+router.patch("/:id/channel/featured", protectAdmin, async (req, res) => {
+  try {
+    const { featured } = req.body || {};
+
+    const user = await StudioUser.findById(req.params.id);
+
+    if (!user) {
+      return errorResponse(res, "User not found", 404);
+    }
+
+    if (!user.channel?.name) {
+      return errorResponse(res, "This user hasn't set up a channel yet", 400);
+    }
+
+    user.channel.featured = Boolean(featured);
+    await user.save();
+
+    return successResponse(res, "Channel visibility updated", {
+      channel: user.channel,
+    });
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+});
 
 export default router;

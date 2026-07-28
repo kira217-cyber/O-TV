@@ -13,6 +13,8 @@ import NormalUsers from "../pages/NormalUsers/NormalUsers";
 
 import Videos from "../pages/Videos/Videos";
 import VideoDetails from "../pages/VideoDetails/VideoDetails";
+import UploadVideo from "../pages/UploadVideo/UploadVideo";
+import PromotionRequests from "../pages/PromotionRequests/PromotionRequests";
 
 import DepositMethods from "../pages/DepositMethods/DepositMethods";
 import DepositRequests from "../pages/DepositRequests/DepositRequests";
@@ -92,6 +94,11 @@ export const routes = createBrowserRouter([
 
       { path: "videos", element: wrap("videos", Videos) },
       { path: "videos/:id", element: wrap("videos", VideoDetails) },
+      { path: "upload-video", element: wrap("upload-video", UploadVideo) },
+      {
+        path: "promotion-requests",
+        element: wrap("promotion-requests", PromotionRequests),
+      },
 
       {
         path: "deposit-methods",

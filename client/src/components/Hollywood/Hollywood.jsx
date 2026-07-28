@@ -112,6 +112,20 @@ const Hollywood = () => {
     ? `${api.defaults.baseURL}${section.backgroundMobile}`
     : DEFAULT_MOBILE_BACKGROUND;
 
+  const promoted = settings?.promotedVideos?.hollywood;
+  const displayedMovies =
+    promoted?.length > 0
+      ? promoted.map((video) => ({
+          id: video.id,
+          title: video.title,
+          badge: "",
+          category: video.category,
+          description: video.description || video.channelName,
+          image: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
+          path: `/watch/${video.id}`,
+        }))
+      : hollywoodMovies;
+
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
@@ -267,7 +281,7 @@ const Hollywood = () => {
             }}
             className="hollywood-swiper"
           >
-            {hollywoodMovies.map((movie, index) => (
+            {displayedMovies.map((movie, index) => (
               <SwiperSlide key={movie.id} className="hollywood-slide">
                 <div
                   className="group/movie relative w-full cursor-pointer"
@@ -297,15 +311,17 @@ const Hollywood = () => {
                           className="h-full w-full select-none object-cover transition-transform duration-500 group-hover/movie:scale-[1.025]"
                         />
 
-                        <span
-                          className={`absolute right-2 top-2 rounded-[4px] px-2 py-[5px] text-[8px] font-semibold leading-none sm:text-[9px] lg:text-[11px] ${
-                            movie.badge === "New Release"
-                              ? "bg-[#5367ef] text-white"
-                              : "bg-[#5ce8ef] text-[#063238]"
-                          }`}
-                        >
-                          {movie.badge}
-                        </span>
+                        {movie.badge && (
+                          <span
+                            className={`absolute right-2 top-2 rounded-[4px] px-2 py-[5px] text-[8px] font-semibold leading-none sm:text-[9px] lg:text-[11px] ${
+                              movie.badge === "New Release"
+                                ? "bg-[#5367ef] text-white"
+                                : "bg-[#5ce8ef] text-[#063238]"
+                            }`}
+                          >
+                            {movie.badge}
+                          </span>
+                        )}
                       </div>
 
                       <h3 className="mt-2 truncate px-1 text-center text-[11px] font-semibold text-white/90 sm:text-[12px] lg:text-[14px]">
@@ -330,15 +346,17 @@ const Hollywood = () => {
                         className="h-full w-full select-none object-cover transition-transform duration-500 hover:scale-[1.025]"
                       />
 
-                      <span
-                        className={`absolute right-3 top-3 rounded-[4px] px-2.5 py-[5px] text-[10px] font-semibold ${
-                          movie.badge === "New Release"
-                            ? "bg-[#5367ef] text-white"
-                            : "bg-[#5ce8ef] text-[#063238]"
-                        }`}
-                      >
-                        {movie.badge}
-                      </span>
+                      {movie.badge && (
+                        <span
+                          className={`absolute right-3 top-3 rounded-[4px] px-2.5 py-[5px] text-[10px] font-semibold ${
+                            movie.badge === "New Release"
+                              ? "bg-[#5367ef] text-white"
+                              : "bg-[#5ce8ef] text-[#063238]"
+                          }`}
+                        >
+                          {movie.badge}
+                        </span>
+                      )}
                     </NavLink>
 
                     {/* Preview details */}

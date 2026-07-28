@@ -6,6 +6,8 @@ import Login from "../pages/Login/Login";
 import Register from "../pages/Register/Register";
 import Withdraw from "../pages/Withdraw/Withdraw";
 import Deposit from "../pages/Deposit/Deposit";
+import WatchVideo from "../pages/WatchVideo/WatchVideo";
+import ChannelPage from "../pages/ChannelPage/ChannelPage";
 import PrivateRoute from "../PrivateRoute/PrivateRoute";
 
 export const routes = createBrowserRouter([
@@ -17,6 +19,14 @@ export const routes = createBrowserRouter([
       {
         index: true,
         element: <Home />,
+      },
+      {
+        path: "watch/:id",
+        element: <WatchVideo />,
+      },
+      {
+        path: "channel/:id",
+        element: <ChannelPage />,
       },
       {
         path: "withdraw",

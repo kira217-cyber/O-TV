@@ -6,6 +6,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 
 import { alignHoverPreview } from "../../utils/alignHoverPreview";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
+import { api } from "../../api/axios";
 
 import "swiper/css";
 import "swiper/css/free-mode";
@@ -129,6 +130,21 @@ const Horror = () => {
 
   const { settings } = useSiteSettings();
   const sectionTitle = settings?.homeSections?.horror?.title || "Horror";
+
+  const promoted = settings?.promotedVideos?.horror;
+  const displayedItems =
+    promoted?.length > 0
+      ? promoted.map((video) => ({
+          id: video.id,
+          title: video.title,
+          badge: "",
+          category: video.category,
+          description: video.description || video.channelName,
+          image: `${api.defaults.baseURL}${video.thumbnail?.portrait}`,
+          hoverImage: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
+          path: `/watch/${video.id}`,
+        }))
+      : horrorItems;
 
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
@@ -284,7 +300,7 @@ const Horror = () => {
             }}
             className="horror-swiper"
           >
-            {horrorItems.map((item, index) => (
+            {displayedItems.map((item, index) => (
               <SwiperSlide key={item.id} className="horror-card-slide">
                 <div
                   className="group/card relative w-full cursor-pointer"

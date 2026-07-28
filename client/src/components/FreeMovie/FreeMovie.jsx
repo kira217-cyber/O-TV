@@ -98,6 +98,20 @@ const FreeMovie = () => {
     ? `${api.defaults.baseURL}${section.backgroundMobile}`
     : DEFAULT_MOBILE_BACKGROUND;
 
+  const promoted = settings?.promotedVideos?.freeMovie;
+  const displayedMovies =
+    promoted?.length > 0
+      ? promoted.map((video) => ({
+          id: video.id,
+          title: video.title,
+          badge: "",
+          category: video.category,
+          description: video.description || video.channelName,
+          image: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
+          path: `/watch/${video.id}`,
+        }))
+      : freeMovies;
+
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
@@ -228,7 +242,7 @@ const FreeMovie = () => {
             }}
             className="free-movie-swiper"
           >
-            {freeMovies.map((movie, index) => (
+            {displayedMovies.map((movie, index) => (
               <SwiperSlide key={movie.id} className="free-movie-slide">
                 <div
                   className="group/movie relative w-full cursor-pointer"
@@ -257,15 +271,17 @@ const FreeMovie = () => {
                           className="h-full w-full select-none object-cover transition-transform duration-500 group-hover/movie:scale-[1.025]"
                         />
 
-                        <span
-                          className={`absolute right-2 top-2 rounded-[4px] px-2 py-[5px] text-[8px] font-semibold leading-none sm:text-[9px] lg:text-[11px] ${
-                            movie.badge === "Exclusive"
-                              ? "bg-[#5ce8ef] text-[#063238]"
-                              : "bg-white text-[#111618]"
-                          }`}
-                        >
-                          {movie.badge}
-                        </span>
+                        {movie.badge && (
+                          <span
+                            className={`absolute right-2 top-2 rounded-[4px] px-2 py-[5px] text-[8px] font-semibold leading-none sm:text-[9px] lg:text-[11px] ${
+                              movie.badge === "Exclusive"
+                                ? "bg-[#5ce8ef] text-[#063238]"
+                                : "bg-white text-[#111618]"
+                            }`}
+                          >
+                            {movie.badge}
+                          </span>
+                        )}
                       </div>
 
                       <h3 className="mt-2 truncate px-1 text-center text-[11px] font-semibold text-white/90 sm:text-[12px] lg:hidden">

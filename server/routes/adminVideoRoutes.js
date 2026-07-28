@@ -4,6 +4,8 @@ import Video, {
   MATURITY_RATING_OPTIONS,
   CATEGORY_OPTIONS,
 } from "../models/Video.js";
+import StudioUser from "../models/StudioUser.js";
+import Promotion, { PROMOTABLE_SECTIONS } from "../models/Promotion.js";
 import { uploadVideoFields } from "../config/multerVideo.js";
 import { handleUpload } from "../utils/handleUpload.js";
 import { successResponse, errorResponse } from "../utils/response.js";
@@ -21,6 +23,180 @@ const router = express.Router();
 
 const DEFAULT_PAGE_SIZE = 30;
 const STATUS_VALUES = ["pending", "active", "rejected"];
+
+/* =========================
+   Create Video (admin direct upload — published immediately,
+   with an optional auto-approved promotion request)
+========================= */
+router.post(
+  "/",
+  protectAdmin,
+  handleUpload(uploadVideoFields),
+  async (req, res) => {
+    const files = req.files || {};
+    const landscapeFile = files.thumbnailLandscape?.[0];
+    const portraitFile = files.thumbnailPortrait?.[0];
+    const videoFile = files.video?.[0];
+    const trailerFile = files.trailer?.[0];
+
+    const rollbackActions = [];
+    const rollback = async () => {
+      for (const action of rollbackActions.reverse()) {
+        await action().catch(() => {});
+      }
+    };
+
+    try {
+      const {
+        studioUserId,
+        title,
+        description,
+        duration,
+        maturityRating,
+        category,
+        sections: sectionsRaw,
+        scheduleType,
+        endDate,
+      } = req.body || {};
+
+      if (!studioUserId) {
+        return errorResponse(res, "A channel must be selected", 400);
+      }
+
+      const studioUser = await StudioUser.findById(studioUserId);
+
+      if (!studioUser) {
+        return errorResponse(res, "Selected channel not found", 400);
+      }
+
+      if (!title?.trim() || !duration?.trim() || !maturityRating || !category) {
+        return errorResponse(
+          res,
+          "Title, duration, maturity rating, and category are required",
+          400,
+        );
+      }
+
+      if (!MATURITY_RATING_OPTIONS.includes(maturityRating)) {
+        return errorResponse(res, "Invalid maturity rating", 400);
+      }
+
+      if (!CATEGORY_OPTIONS.includes(category)) {
+        return errorResponse(res, "Invalid category", 400);
+      }
+
+      if (!landscapeFile || !portraitFile) {
+        return errorResponse(
+          res,
+          "Both landscape (16:9) and portrait (9:16) thumbnail images are required",
+          400,
+        );
+      }
+
+      if (landscapeFile.size > MAX_THUMBNAIL_SIZE || portraitFile.size > MAX_THUMBNAIL_SIZE) {
+        return errorResponse(res, "Thumbnails must be 20MB or smaller", 400);
+      }
+
+      if (!videoFile) {
+        return errorResponse(res, "Full video file is required", 400);
+      }
+
+      let sections = [];
+
+      if (sectionsRaw) {
+        try {
+          sections = JSON.parse(sectionsRaw);
+        } catch {
+          return errorResponse(res, "Invalid sections payload", 400);
+        }
+
+        if (
+          !Array.isArray(sections) ||
+          sections.some((section) => !PROMOTABLE_SECTIONS.includes(section))
+        ) {
+          return errorResponse(res, "Invalid promotion section selected", 400);
+        }
+      }
+
+      const wantsPromotion = sections.length > 0;
+      const normalizedScheduleType = scheduleType === "lifetime" ? "lifetime" : "campaign";
+
+      if (wantsPromotion && normalizedScheduleType === "campaign") {
+        if (!endDate || Number.isNaN(new Date(endDate).getTime())) {
+          return errorResponse(res, "A valid end date is required for a campaign schedule", 400);
+        }
+      }
+
+      const landscapePath = await saveThumbnail(landscapeFile);
+      rollbackActions.push(async () => deleteLocalFile(landscapePath));
+
+      const portraitPath = await saveThumbnail(portraitFile);
+      rollbackActions.push(async () => deleteLocalFile(portraitPath));
+
+      const videoFileName = buildBunnyFileName("video", videoFile.originalname);
+      const videoUrl = await uploadToBunny(
+        videoFile.buffer,
+        videoFileName,
+        videoFile.mimetype,
+      );
+      rollbackActions.push(async () => deleteFromBunny(videoFileName));
+
+      let trailerData = { url: null, fileName: null };
+
+      if (trailerFile) {
+        const trailerFileName = buildBunnyFileName(
+          "trailer",
+          trailerFile.originalname,
+        );
+        const trailerUrl = await uploadToBunny(
+          trailerFile.buffer,
+          trailerFileName,
+          trailerFile.mimetype,
+        );
+        rollbackActions.push(async () => deleteFromBunny(trailerFileName));
+        trailerData = { url: trailerUrl, fileName: trailerFileName };
+      }
+
+      const video = await Video.create({
+        studioUser: studioUser._id,
+        title: title.trim(),
+        description: description?.trim() || "",
+        thumbnail: { landscape: landscapePath, portrait: portraitPath },
+        duration: duration.trim(),
+        maturityRating,
+        category,
+        video: { url: videoUrl, fileName: videoFileName },
+        trailer: trailerData,
+        status: "active",
+      });
+
+      let promotion = null;
+
+      if (wantsPromotion) {
+        promotion = await Promotion.create({
+          video: video._id,
+          studioUser: studioUser._id,
+          sections,
+          requestedBy: "admin",
+          scheduleType: normalizedScheduleType,
+          startDate: new Date(),
+          endDate: normalizedScheduleType === "lifetime" ? null : new Date(endDate),
+          status: "approved",
+        });
+      }
+
+      return successResponse(
+        res,
+        "Video uploaded and published successfully",
+        { video: publicVideo(video, { includeOwner: true }), promotion },
+        201,
+      );
+    } catch (error) {
+      await rollback();
+      return errorResponse(res, error.message, 500);
+    }
+  },
+);
 
 /* =========================
    Video Stats (for the admin dashboard)
