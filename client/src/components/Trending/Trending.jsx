@@ -221,7 +221,7 @@ const Trending = () => {
           {/* Mobile: always visible */}
           {/* Desktop: section hover করলে visible */}
           <NavLink
-            to="/trending"
+            to="/creator-channels"
             className="flex h-[31px] cursor-pointer items-center gap-1 rounded-[7px] bg-[#192532] px-3 text-[11px] font-semibold text-white transition-all duration-300 hover:bg-[#273748] sm:h-[34px] sm:text-[12px] lg:invisible lg:h-[36px] lg:px-4 lg:text-[13px] lg:opacity-0 lg:group-hover/trending:visible lg:group-hover/trending:opacity-100"
           >
             <span>See All</span>

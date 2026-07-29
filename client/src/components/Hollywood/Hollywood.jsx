@@ -219,7 +219,7 @@ const Hollywood = () => {
 
           {/* Mobile visible; desktop section hover করলে visible */}
           <NavLink
-            to="/hollywood"
+            to="/creator-channels"
             className="flex h-[31px] shrink-0 cursor-pointer items-center gap-1 rounded-[7px] bg-[#142231]/95 px-3 text-[10px] font-semibold text-white shadow-md transition-all duration-300 hover:bg-[#23394e] sm:h-[34px] sm:text-[12px] lg:invisible lg:h-[36px] lg:px-4 lg:text-[13px] lg:opacity-0 lg:group-hover/hollywood:visible lg:group-hover/hollywood:opacity-100"
           >
             <span>See All</span>

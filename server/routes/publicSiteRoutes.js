@@ -6,14 +6,24 @@ import { ADS_SLOTS } from "../models/AdsSetting.js";
 import { HOME_SECTION_KEYS } from "../models/HomeSection.js";
 import HeroSlide from "../models/HeroSlide.js";
 import Promotion, { PROMOTABLE_SECTIONS } from "../models/Promotion.js";
-import Video from "../models/Video.js";
+import Video, { CATEGORY_OPTIONS } from "../models/Video.js";
 import StudioUser from "../models/StudioUser.js";
+import LiveTvChannel from "../models/LiveTvChannel.js";
 
 import { successResponse, errorResponse } from "../utils/response.js";
 import { ensureHomeSection, ensureAdsSlot } from "../utils/siteDefaults.js";
 import { publicVideo } from "../utils/videoSerializer.js";
 
 const router = express.Router();
+
+const shuffle = (array) => {
+  const copy = [...array];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+};
 
 const summarizePromotedVideo = (video, studioUser) => ({
   id: video._id,
@@ -24,6 +34,7 @@ const summarizePromotedVideo = (video, studioUser) => ({
   category: video.category,
   maturityRating: video.maturityRating,
   channelName: studioUser?.channel?.name || studioUser?.fullName || "O-TV Studio",
+  video: video.video,
 });
 
 // Single combined payload — every home page component reads its own slice
@@ -32,23 +43,32 @@ router.get("/settings", async (req, res) => {
   try {
     const now = new Date();
 
-    const [identity, footerLinks, adsList, homeSectionList, heroSlides, activePromotions, channels] =
-      await Promise.all([
-        SiteIdentity.findOne(),
-        FooterLink.find().sort({ order: 1, createdAt: 1 }),
-        Promise.all(ADS_SLOTS.map((slot) => ensureAdsSlot(slot))),
-        Promise.all(HOME_SECTION_KEYS.map((key) => ensureHomeSection(key))),
-        HeroSlide.find().sort({ order: 1, createdAt: 1 }),
-        Promotion.find({
-          status: "approved",
-          startDate: { $lte: now },
-          $or: [{ scheduleType: "lifetime" }, { endDate: { $gte: now } }],
-        })
-          .sort({ startDate: -1 })
-          .populate({ path: "video", match: { status: "active" } })
-          .populate("studioUser", "fullName channel"),
-        StudioUser.find({ "channel.featured": true }).select("fullName channel"),
-      ]);
+    const [
+      identity,
+      footerLinks,
+      adsList,
+      homeSectionList,
+      heroSlides,
+      activePromotions,
+      channels,
+      liveTvChannels,
+    ] = await Promise.all([
+      SiteIdentity.findOne(),
+      FooterLink.find().sort({ order: 1, createdAt: 1 }),
+      Promise.all(ADS_SLOTS.map((slot) => ensureAdsSlot(slot))),
+      Promise.all(HOME_SECTION_KEYS.map((key) => ensureHomeSection(key))),
+      HeroSlide.find().sort({ order: 1, createdAt: 1 }),
+      Promotion.find({
+        status: "approved",
+        startDate: { $lte: now },
+        $or: [{ scheduleType: "lifetime" }, { endDate: { $gte: now } }],
+      })
+        .sort({ startDate: -1 })
+        .populate({ path: "video", match: { status: "active" } })
+        .populate("studioUser", "fullName channel"),
+      StudioUser.find({ "channel.featured": true }).select("fullName channel"),
+      LiveTvChannel.find({ homeFeatured: true }).sort({ order: 1, createdAt: 1 }),
+    ]);
 
     const ads = {};
     adsList.forEach((entry) => {
@@ -93,6 +113,69 @@ router.get("/settings", async (req, res) => {
         name: user.channel.name,
         logo: user.channel.logo,
       })),
+      liveTv: liveTvChannels,
+    });
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+});
+
+// Consolidated public video list — powers Movies/Natok/Sports (category +
+// sort=random), New (sort=newest), Search (search=), and Shorts (sort=random).
+router.get("/videos", async (req, res) => {
+  try {
+    const { category, search, sort, page: pageQuery, limit: limitQuery } =
+      req.query || {};
+
+    const filter = { status: "active" };
+
+    if (typeof category === "string" && CATEGORY_OPTIONS.includes(category)) {
+      filter.category = category;
+    }
+
+    if (typeof search === "string" && search.trim()) {
+      filter.title = new RegExp(search.trim(), "i");
+    }
+
+    const limit = Math.max(1, Math.min(100, parseInt(limitQuery, 10) || 24));
+    const selectFields =
+      "title description thumbnail duration category maturityRating studioUser video";
+
+    if (sort === "random") {
+      const pool = await Video.find(filter)
+        .populate("studioUser", "fullName channel")
+        .limit(200)
+        .select(selectFields);
+
+      const videos = shuffle(pool)
+        .slice(0, limit)
+        .map((video) => summarizePromotedVideo(video, video.studioUser));
+
+      return successResponse(res, "Videos loaded", {
+        videos,
+        total: videos.length,
+        page: 1,
+        totalPages: 1,
+      });
+    }
+
+    const page = Math.max(1, parseInt(pageQuery, 10) || 1);
+
+    const [videos, total] = await Promise.all([
+      Video.find(filter)
+        .populate("studioUser", "fullName channel")
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .select(selectFields),
+      Video.countDocuments(filter),
+    ]);
+
+    return successResponse(res, "Videos loaded", {
+      videos: videos.map((video) => summarizePromotedVideo(video, video.studioUser)),
+      total,
+      page,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
     });
   } catch (error) {
     return errorResponse(res, error.message, 500);
@@ -133,6 +216,45 @@ router.get("/videos/:id", async (req, res) => {
   }
 });
 
+// Paginated/searchable directory of every creator channel (not just the
+// admin-featured ones shown on the home page's AllChannel row).
+router.get("/channels", async (req, res) => {
+  try {
+    const { search, page: pageQuery, limit: limitQuery } = req.query || {};
+
+    const filter = { "channel.name": { $ne: null } };
+
+    if (typeof search === "string" && search.trim()) {
+      filter["channel.name"] = { $regex: search.trim(), $options: "i" };
+    }
+
+    const page = Math.max(1, parseInt(pageQuery, 10) || 1);
+    const limit = Math.max(1, Math.min(100, parseInt(limitQuery, 10) || 24));
+
+    const [users, total] = await Promise.all([
+      StudioUser.find(filter)
+        .select("fullName channel")
+        .sort({ "channel.name": 1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      StudioUser.countDocuments(filter),
+    ]);
+
+    return successResponse(res, "Channels loaded", {
+      channels: users.map((user) => ({
+        id: user._id,
+        name: user.channel.name,
+        logo: user.channel.logo,
+      })),
+      total,
+      page,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    });
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+});
+
 // Public channel page — channel identity + all of its active videos.
 router.get("/channels/:studioUserId", async (req, res) => {
   try {
@@ -159,6 +281,58 @@ router.get("/channels/:studioUserId", async (req, res) => {
       },
       videos,
     });
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+});
+
+// Full Live TV directory — every managed channel (not just the
+// home-featured ones already in the /settings bundle), paginated 48/page.
+router.get("/live-tv", async (req, res) => {
+  try {
+    const { search, page: pageQuery, limit: limitQuery } = req.query || {};
+
+    const filter = {};
+
+    if (typeof search === "string" && search.trim()) {
+      filter.name = new RegExp(search.trim(), "i");
+    }
+
+    const page = Math.max(1, parseInt(pageQuery, 10) || 1);
+    const limit = Math.max(1, Math.min(100, parseInt(limitQuery, 10) || 48));
+
+    const [channels, total] = await Promise.all([
+      LiveTvChannel.find(filter)
+        .sort({ order: 1, createdAt: 1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      LiveTvChannel.countDocuments(filter),
+    ]);
+
+    return successResponse(res, "Live TV channels loaded", {
+      channels,
+      total,
+      page,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    });
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+});
+
+router.get("/live-tv/:id", async (req, res) => {
+  try {
+    const channel = await LiveTvChannel.findById(req.params.id);
+
+    if (!channel) {
+      return errorResponse(res, "Channel not found", 404);
+    }
+
+    const related = await LiveTvChannel.find({ _id: { $ne: channel._id } })
+      .sort({ order: 1, createdAt: 1 })
+      .limit(12);
+
+    return successResponse(res, "Live TV channel loaded", { channel, related });
   } catch (error) {
     return errorResponse(res, error.message, 500);
   }

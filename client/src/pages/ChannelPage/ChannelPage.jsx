@@ -32,7 +32,7 @@ const ChannelPage = () => {
 
   if (loading) {
     return (
-      <div className="mt-22 flex min-h-[50vh] items-center justify-center text-slate-400 md:mt-16">
+      <div className="flex min-h-[50vh] items-center justify-center text-slate-400">
         Loading...
       </div>
     );
@@ -43,7 +43,7 @@ const ChannelPage = () => {
   const base = api.defaults.baseURL;
 
   return (
-    <div className="mt-22 mx-auto w-full max-w-[1680px] px-4 pb-16 text-white sm:px-6 md:mt-16 lg:px-10 xl:px-[42px]">
+    <div className="mx-auto w-full max-w-[1680px] px-4 pb-16 text-white sm:px-6 lg:px-10 xl:px-[42px]">
       <div className="flex items-center gap-4 pt-8">
         {channel.logo ? (
           <img

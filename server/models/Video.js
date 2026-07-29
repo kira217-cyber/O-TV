@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 export const MATURITY_RATING_OPTIONS = ["All Ages", "13+", "16+", "18+"];
 
 export const CATEGORY_OPTIONS = [
+  "Movie",
+  "Natok",
   "Action",
   "Romance",
   "Comedy",

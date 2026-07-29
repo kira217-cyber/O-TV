@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   ChevronLeft,
@@ -147,28 +147,82 @@ const AllOTTPlatForms = () => {
 
   const { settings } = useSiteSettings();
   const sectionTitle = settings?.homeSections?.allOtt?.title || "All OTT Platforms";
-  const promoted = settings?.promotedVideos?.allOtt;
 
-  const [activePlatform, setActivePlatform] = useState("chorki");
+  const realChannels = useMemo(
+    () => (settings?.channels || []).filter((channel) => channel.logo),
+    [settings],
+  );
+  const usingRealChannels = realChannels.length > 0;
+
+  const platformList = useMemo(() => {
+    if (usingRealChannels) {
+      return realChannels.map((channel) => ({
+        id: channel.id,
+        name: channel.name,
+        logo: `${api.defaults.baseURL}${channel.logo}`,
+      }));
+    }
+    return ottPlatforms;
+  }, [usingRealChannels, realChannels]);
+
+  const [selectedPlatformId, setSelectedPlatformId] = useState(null);
+  const [channelVideos, setChannelVideos] = useState({});
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
+  const activePlatform =
+    selectedPlatformId &&
+    platformList.some((platform) => platform.id === selectedPlatformId)
+      ? selectedPlatformId
+      : platformList[0]?.id;
+
+  useEffect(() => {
+    if (!usingRealChannels || !activePlatform) return;
+    if (channelVideos[activePlatform]) return;
+
+    let cancelled = false;
+
+    api
+      .get(`/api/site/channels/${activePlatform}`)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setChannelVideos((previous) => ({
+          ...previous,
+          [activePlatform]: data?.data?.videos || [],
+        }));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setChannelVideos((previous) => ({
+            ...previous,
+            [activePlatform]: [],
+          }));
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activePlatform, usingRealChannels, channelVideos]);
+
   const selectedPlatform =
-    ottPlatforms.find((platform) => platform.id === activePlatform) ||
-    ottPlatforms[0];
+    platformList.find((platform) => platform.id === activePlatform) ||
+    platformList[0];
 
   const displayedMovies = useMemo(() => {
-    if (promoted?.length > 0) {
-      return promoted.map((video) => ({
-        id: video.id,
+    if (usingRealChannels) {
+      const videos = channelVideos[activePlatform] || [];
+
+      return videos.map((video) => ({
+        id: video._id,
         title: video.title,
         category: video.category,
         badge: "",
-        description: video.description || video.channelName,
+        description: selectedPlatform?.name || "",
         image: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
         hoverImage: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
-        path: `/watch/${video.id}`,
-        displayId: `real-${video.id}`,
+        path: `/watch/${video._id}`,
+        displayId: `real-${video._id}`,
       }));
     }
 
@@ -184,7 +238,7 @@ const AllOTTPlatForms = () => {
         displayId: `${activePlatform}-${movie.id}-${index}`,
       }),
     );
-  }, [activePlatform, promoted]);
+  }, [activePlatform, usingRealChannels, channelVideos, selectedPlatform]);
 
   const updateNavigation = (swiper) => {
     if (!swiper) return;
@@ -253,14 +307,14 @@ const AllOTTPlatForms = () => {
 
         {/* OTT platform navigation */}
         <div className="ott-platform-scroll mt-4 flex items-center gap-2 overflow-x-auto pb-[11px] sm:mt-5 sm:gap-3 lg:gap-4">
-          {ottPlatforms.map((platform) => {
+          {platformList.map((platform) => {
             const isActive = activePlatform === platform.id;
 
             return (
               <button
                 key={platform.id}
                 type="button"
-                onClick={() => setActivePlatform(platform.id)}
+                onClick={() => setSelectedPlatformId(platform.id)}
                 className={`relative flex h-[46px] shrink-0 cursor-pointer items-center gap-2 rounded-[9px] border px-3 transition-all duration-200 sm:h-[51px] sm:px-4 ${
                   isActive
                     ? "border-[#23e2e8] bg-[#1d2426] text-white"
@@ -511,7 +565,11 @@ const AllOTTPlatForms = () => {
         {/* Browse platform button */}
         <div className="mt-2 sm:mt-3">
           <NavLink
-            to={`/ott/${selectedPlatform.id}`}
+            to={
+              usingRealChannels
+                ? `/channel/${selectedPlatform.id}`
+                : `/ott/${selectedPlatform.id}`
+            }
             className="group/browse inline-flex h-[43px] cursor-pointer items-center gap-3 rounded-[9px] bg-[#242b2d] px-4 text-[14px] font-semibold text-white transition-all duration-200 hover:bg-[#30383a] active:scale-[0.98] sm:h-[48px] sm:text-[16px]"
           >
             <span>Browse {selectedPlatform.name}</span>

@@ -225,7 +225,7 @@ const Horror = () => {
 
           {/* Mobile visible; desktop section hover করলে visible */}
           <NavLink
-            to="/horror"
+            to="/creator-channels"
             className="flex h-[31px] shrink-0 cursor-pointer items-center gap-1 rounded-[7px] bg-[#192532] px-3 text-[10px] font-semibold text-white transition-all duration-300 hover:bg-[#273748] sm:h-[34px] sm:text-[12px] lg:invisible lg:h-[36px] lg:px-4 lg:text-[13px] lg:opacity-0 lg:group-hover/horror:visible lg:group-hover/horror:opacity-100"
           >
             <span>See All</span>

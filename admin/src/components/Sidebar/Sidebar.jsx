@@ -422,7 +422,7 @@ const Sidebar = () => {
                 />
               )}
 
-              {/* {visibleDepositItems.length > 0 && (
+              {visibleDepositItems.length > 0 && (
                 <DropdownSection
                   title="Deposit"
                   icon={<FaWallet />}
@@ -431,9 +431,8 @@ const Sidebar = () => {
                   items={visibleDepositItems}
                   onClose={() => setOpen(false)}
                 />
-              )} */}
+              )}
 
-{/*               
               {visibleWithdrawItems.length > 0 && (
                 <DropdownSection
                   title="Withdraw"
@@ -443,7 +442,7 @@ const Sidebar = () => {
                   items={visibleWithdrawItems}
                   onClose={() => setOpen(false)}
                 />
-              )} */}
+              )}
 
               {visibleContentItems.length > 0 && (
                 <DropdownSection

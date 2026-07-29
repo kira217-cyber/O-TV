@@ -8,6 +8,7 @@ import {
   SECTIONS_WITH_BACKGROUND,
 } from "../models/HomeSection.js";
 import HeroSlide from "../models/HeroSlide.js";
+import LiveTvChannel from "../models/LiveTvChannel.js";
 
 import upload from "../config/multer.js";
 import { handleUpload } from "../utils/handleUpload.js";
@@ -409,6 +410,121 @@ router.delete("/hero-slides/:id", async (req, res) => {
     deleteLocalFile(slide.image);
 
     return successResponse(res, "Hero slide deleted");
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+});
+
+/* =========================
+   Live TV — external source lookup + managed channel list
+========================= */
+const LIVE_TV_SOURCE_URL =
+  "https://raw.githubusercontent.com/abusaeeidx/Mrgify-BDIX-IPTV/main/Channels_data.json";
+
+router.get("/live-tv-source", async (req, res) => {
+  try {
+    const response = await fetch(LIVE_TV_SOURCE_URL);
+
+    if (!response.ok) {
+      return errorResponse(res, "Failed to fetch the channel source list", 502);
+    }
+
+    const data = await response.json();
+
+    return successResponse(res, "Channel source list loaded", {
+      channels: Array.isArray(data?.channels) ? data.channels : [],
+    });
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+});
+
+router.get("/live-tv-channels", async (req, res) => {
+  try {
+    const channels = await LiveTvChannel.find().sort({ order: 1, createdAt: 1 });
+    return successResponse(res, "Live TV channels loaded", { channels });
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+});
+
+router.post(
+  "/live-tv-channels",
+  handleUpload(upload.single("logo")),
+  async (req, res) => {
+    try {
+      const { name, streamUrl, homeFeatured } = req.body || {};
+
+      if (!name?.trim() || !streamUrl?.trim()) {
+        if (req.file) deleteLocalFile(`/uploads/${req.file.filename}`);
+        return errorResponse(res, "Name and stream URL are required", 400);
+      }
+
+      if (!req.file) {
+        return errorResponse(res, "A logo image is required", 400);
+      }
+
+      const count = await LiveTvChannel.countDocuments();
+
+      const channel = await LiveTvChannel.create({
+        name: name.trim(),
+        streamUrl: streamUrl.trim(),
+        logo: `/uploads/${req.file.filename}`,
+        homeFeatured: homeFeatured === "true" || homeFeatured === true,
+        order: count,
+      });
+
+      return successResponse(res, "Live TV channel created", { channel }, 201);
+    } catch (error) {
+      if (req.file) deleteLocalFile(`/uploads/${req.file.filename}`);
+      return errorResponse(res, error.message, 500);
+    }
+  },
+);
+
+router.put(
+  "/live-tv-channels/:id",
+  handleUpload(upload.single("logo")),
+  async (req, res) => {
+    try {
+      const channel = await LiveTvChannel.findById(req.params.id);
+
+      if (!channel) {
+        if (req.file) deleteLocalFile(`/uploads/${req.file.filename}`);
+        return errorResponse(res, "Live TV channel not found", 404);
+      }
+
+      const { name, streamUrl, homeFeatured } = req.body || {};
+      const previousLogo = channel.logo;
+
+      if (name?.trim()) channel.name = name.trim();
+      if (streamUrl?.trim()) channel.streamUrl = streamUrl.trim();
+      if (typeof homeFeatured !== "undefined") {
+        channel.homeFeatured = homeFeatured === "true" || homeFeatured === true;
+      }
+      if (req.file) channel.logo = `/uploads/${req.file.filename}`;
+
+      await channel.save();
+
+      if (req.file && previousLogo) deleteLocalFile(previousLogo);
+
+      return successResponse(res, "Live TV channel updated", { channel });
+    } catch (error) {
+      if (req.file) deleteLocalFile(`/uploads/${req.file.filename}`);
+      return errorResponse(res, error.message, 500);
+    }
+  },
+);
+
+router.delete("/live-tv-channels/:id", async (req, res) => {
+  try {
+    const channel = await LiveTvChannel.findByIdAndDelete(req.params.id);
+
+    if (!channel) return errorResponse(res, "Live TV channel not found", 404);
+
+    deleteLocalFile(channel.logo);
+
+    return successResponse(res, "Live TV channel deleted");
   } catch (error) {
     return errorResponse(res, error.message, 500);
   }

@@ -1,5 +1,4 @@
 import React from "react";
-import Slider from "../../components/Slider/Slider";
 import Trending from "../../components/Trending/Trending";
 import FreeMovie from "../../components/FreeMovie/FreeMovie";
 import TopTenMovie from "../../components/TopTenMovie/TopTenMovie";
@@ -15,8 +14,7 @@ import Horror from "../../components/Horror/Horror";
 
 const Home = () => {
   return (
-    <div className="mt-22 md:mt-16">
-      <Slider />
+    <div>
       <Trending />
       <FreeMovie />
       <AdsImage />

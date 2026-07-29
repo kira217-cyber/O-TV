@@ -1,10 +1,11 @@
-import React, { useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { NavLink } from "react-router";
 import { A11y, Keyboard } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
 import { useSiteSettings } from "../../hooks/useSiteSettings";
+import { api } from "../../api/axios";
 
 import "swiper/css";
 
@@ -113,6 +114,22 @@ const LiveTv = () => {
   const { settings } = useSiteSettings();
   const sectionTitle = settings?.homeSections?.liveTv?.title || "Live TV";
 
+  const realChannels = settings?.liveTv || [];
+  const displayedChannels = useMemo(() => {
+    if (realChannels.length > 0) {
+      return realChannels.map((channel) => ({
+        id: channel._id,
+        name: channel.name,
+        image: channel.logo
+          ? `${api.defaults.baseURL}${channel.logo}`
+          : "https://asset.bioscopelive.com/uploads/images/2026/05/05/thumbnails_53d5a9f2d17d89002d2154f39251d374_goplay_deppto_land.png?w=320&q=75",
+        path: `/live-tv/${channel._id}`,
+        exclusive: false,
+      }));
+    }
+    return liveTvChannels;
+  }, [realChannels]);
+
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
@@ -195,7 +212,7 @@ const LiveTv = () => {
             }}
             className="live-tv-swiper"
           >
-            {liveTvChannels.map((channel, index) => (
+            {displayedChannels.map((channel, index) => (
               <SwiperSlide key={channel.id} className="live-tv-slide">
                 <NavLink
                   to={channel.path}

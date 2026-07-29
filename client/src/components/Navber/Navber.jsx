@@ -19,16 +19,20 @@ const navItems = [
     path: "/movies",
   },
   {
-    name: "Free",
-    path: "/free",
-  },
-  {
-    name: "Shows",
-    path: "/shows",
+    name: "Natok",
+    path: "/natok",
   },
   {
     name: "Sports",
     path: "/sports",
+  },
+  {
+    name: "Creator Channels",
+    path: "/creator-channels",
+  },
+  {
+    name: "Live TV",
+    path: "/live-tv",
   },
 ];
 
@@ -149,17 +153,6 @@ const Navber = () => {
                 {item.name}
               </NavLink>
             ))}
-
-            <NavLink to="/fifa-world-cup-2026" className={desktopNavClass}>
-              <span className="mr-2 text-[15px]" aria-hidden="true">
-                ⚽
-              </span>
-
-              <span>
-                FIFA World Cup 2026
-                <sup className="ml-[1px] text-[8px]">TM</sup>
-              </span>
-            </NavLink>
           </nav>
 
           {/* Desktop actions */}
@@ -234,17 +227,6 @@ const Navber = () => {
                   {item.name}
                 </NavLink>
               ))}
-
-              <NavLink to="/fifa-world-cup-2026" className={mobileNavClass}>
-                <span className="mr-[5px] text-[11px]" aria-hidden="true">
-                  ⚽
-                </span>
-
-                <span>
-                  FIFA World Cup 2026
-                  <sup className="ml-[1px] text-[7px]">TM</sup>
-                </span>
-              </NavLink>
             </nav>
 
             {/* Right side fade */}
