@@ -7,6 +7,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 
 import { api } from "../../api/axios";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
+import BannerSkeleton from "../Skeletons/BannerSkeleton";
 
 import "swiper/css";
 
@@ -108,7 +109,12 @@ const Slider = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const navigate = useNavigate();
 
-  const { settings } = useSiteSettings();
+  const { settings, loading } = useSiteSettings();
+
+  if (loading) {
+    return <BannerSkeleton />;
+  }
+
   const promoted = settings?.promotedVideos?.slider;
   const displayedItems =
     promoted?.length > 0

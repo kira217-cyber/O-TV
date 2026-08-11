@@ -6,6 +6,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 
 import { useSiteSettings } from "../../hooks/useSiteSettings";
 import { api } from "../../api/axios";
+import CircleRowSkeleton from "../Skeletons/CircleRowSkeleton";
 
 import "swiper/css";
 
@@ -111,7 +112,7 @@ const liveTvChannels = [
 const LiveTv = () => {
   const swiperRef = useRef(null);
 
-  const { settings } = useSiteSettings();
+  const { settings, loading: settingsLoading } = useSiteSettings();
   const sectionTitle = settings?.homeSections?.liveTv?.title || "Live TV";
 
   const realChannels = settings?.liveTv || [];
@@ -132,6 +133,10 @@ const LiveTv = () => {
 
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
+
+  if (settingsLoading) {
+    return <CircleRowSkeleton />;
+  }
 
   const updateNavigation = (swiper) => {
     if (!swiper) return;

@@ -7,6 +7,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { alignHoverPreview } from "../../utils/alignHoverPreview";
 import { api } from "../../api/axios";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
+import RowSkeleton from "../Skeletons/RowSkeleton";
 
 import "swiper/css";
 
@@ -88,7 +89,7 @@ const FreeMovie = () => {
   const swiperRef = useRef(null);
   const navigate = useNavigate();
 
-  const { settings } = useSiteSettings();
+  const { settings, loading: settingsLoading } = useSiteSettings();
   const section = settings?.homeSections?.freeMovie;
   const sectionTitle = section?.title || "Shakib Khan's Free Movie";
   const desktopBackground = section?.backgroundDesktop
@@ -114,6 +115,10 @@ const FreeMovie = () => {
 
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
+
+  if (settingsLoading) {
+    return <RowSkeleton cardWidth={180} cardHeight={280} />;
+  }
 
   const updateNavigation = (swiper) => {
     if (!swiper) return;

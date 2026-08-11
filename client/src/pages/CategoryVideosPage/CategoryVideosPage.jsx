@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { PlayCircle, Shuffle } from "lucide-react";
 
 import { api } from "../../api/axios";
+import GridSkeleton from "../../components/Skeletons/GridSkeleton";
 
 const CategoryVideosPage = ({ category, title }) => {
   const [videos, setVideos] = useState([]);
@@ -55,9 +56,7 @@ const CategoryVideosPage = ({ category, title }) => {
       </div>
 
       {loading ? (
-        <div className="flex min-h-[40vh] items-center justify-center text-slate-400">
-          Loading...
-        </div>
+        <GridSkeleton />
       ) : videos.length === 0 ? (
         <p className="py-16 text-center text-slate-400">
           No videos found in this category yet.

@@ -7,6 +7,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { alignHoverPreview } from "../../utils/alignHoverPreview";
 import { api } from "../../api/axios";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
+import RowSkeleton from "../Skeletons/RowSkeleton";
 
 import "swiper/css";
 import "swiper/css/free-mode";
@@ -102,7 +103,7 @@ const Hollywood = () => {
   const swiperRef = useRef(null);
   const navigate = useNavigate();
 
-  const { settings } = useSiteSettings();
+  const { settings, loading: settingsLoading } = useSiteSettings();
   const section = settings?.homeSections?.hollywood;
   const sectionTitle = section?.title || "Hollywood Blockbuster Legends";
   const desktopBackground = section?.backgroundDesktop
@@ -128,6 +129,10 @@ const Hollywood = () => {
 
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
+
+  if (settingsLoading) {
+    return <RowSkeleton cardWidth={180} cardHeight={280} />;
+  }
 
   const updateNavigation = (swiper) => {
     if (!swiper) return;

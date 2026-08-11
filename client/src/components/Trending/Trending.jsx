@@ -7,6 +7,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { alignHoverPreview } from "../../utils/alignHoverPreview";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
 import { api } from "../../api/axios";
+import RowSkeleton from "../Skeletons/RowSkeleton";
 
 import "swiper/css";
 
@@ -123,7 +124,7 @@ const Trending = () => {
   const swiperRef = useRef(null);
   const navigate = useNavigate();
 
-  const { settings } = useSiteSettings();
+  const { settings, loading: settingsLoading } = useSiteSettings();
   const sectionTitle = settings?.homeSections?.trending?.title || "Trending";
 
   const promoted = settings?.promotedVideos?.trending;
@@ -143,6 +144,10 @@ const Trending = () => {
 
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
+
+  if (settingsLoading) {
+    return <RowSkeleton cardWidth={180} cardHeight={280} />;
+  }
 
   const updateNavigation = (swiper) => {
     if (!swiper) return;

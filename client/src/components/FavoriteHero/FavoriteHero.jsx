@@ -6,6 +6,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 
 import { api } from "../../api/axios";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
+import CircleRowSkeleton from "../Skeletons/CircleRowSkeleton";
 
 import "swiper/css";
 import "swiper/css/free-mode";
@@ -79,7 +80,7 @@ const heroes = [
 const FavoriteHero = () => {
   const swiperRef = useRef(null);
 
-  const { settings } = useSiteSettings();
+  const { settings, loading: settingsLoading } = useSiteSettings();
   const sectionTitle =
     settings?.homeSections?.favoriteHero?.title || "Pick Your Favorite Hero";
 
@@ -95,6 +96,10 @@ const FavoriteHero = () => {
 
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
+
+  if (settingsLoading) {
+    return <CircleRowSkeleton />;
+  }
 
   const updateNavigation = (swiper) => {
     if (!swiper) return;

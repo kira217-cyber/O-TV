@@ -4,6 +4,7 @@ import { Radio } from "lucide-react";
 
 import { api } from "../../api/axios";
 import HlsPlayer from "../../components/HlsPlayer/HlsPlayer";
+import PlayerSkeleton from "../../components/Skeletons/PlayerSkeleton";
 
 const LiveTvWatch = () => {
   const { id } = useParams();
@@ -32,11 +33,7 @@ const LiveTvWatch = () => {
   }, [id, navigate]);
 
   if (loading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center text-slate-400">
-        Loading...
-      </div>
-    );
+    return <PlayerSkeleton />;
   }
 
   if (!channel) return null;

@@ -14,6 +14,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { alignHoverPreview } from "../../utils/alignHoverPreview";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
 import { api } from "../../api/axios";
+import RowSkeleton from "../Skeletons/RowSkeleton";
 
 import "swiper/css";
 
@@ -145,7 +146,7 @@ const AllOTTPlatForms = () => {
   const swiperRef = useRef(null);
   const navigate = useNavigate();
 
-  const { settings } = useSiteSettings();
+  const { settings, loading: settingsLoading } = useSiteSettings();
   const sectionTitle = settings?.homeSections?.allOtt?.title || "All OTT Platforms";
 
   const realChannels = useMemo(
@@ -239,6 +240,10 @@ const AllOTTPlatForms = () => {
       }),
     );
   }, [activePlatform, usingRealChannels, channelVideos, selectedPlatform]);
+
+  if (settingsLoading) {
+    return <RowSkeleton cardWidth={280} cardHeight={158} />;
+  }
 
   const updateNavigation = (swiper) => {
     if (!swiper) return;

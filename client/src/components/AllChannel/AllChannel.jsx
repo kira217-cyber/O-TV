@@ -6,6 +6,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 
 import { useSiteSettings } from "../../hooks/useSiteSettings";
 import { api } from "../../api/axios";
+import CircleRowSkeleton from "../Skeletons/CircleRowSkeleton";
 
 import "swiper/css";
 
@@ -87,7 +88,7 @@ const channels = [
 const AllChannel = () => {
   const swiperRef = useRef(null);
 
-  const { settings } = useSiteSettings();
+  const { settings, loading: settingsLoading } = useSiteSettings();
   const sectionTitle =
     settings?.homeSections?.allChannel?.title || "Unlimited Entertainment";
 
@@ -105,6 +106,10 @@ const AllChannel = () => {
 
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
+
+  if (settingsLoading) {
+    return <CircleRowSkeleton />;
+  }
 
   const updateNavigation = (swiper) => {
     if (!swiper) return;

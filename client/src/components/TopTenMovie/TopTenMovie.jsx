@@ -7,6 +7,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 
 import { useSiteSettings } from "../../hooks/useSiteSettings";
 import { api } from "../../api/axios";
+import RowSkeleton from "../Skeletons/RowSkeleton";
 
 import number1 from "../../assets/topTenNumbers/number-1.svg";
 import number2 from "../../assets/topTenNumbers/number-2.svg";
@@ -136,8 +137,12 @@ const topTenMovies = movieInformation.map((movie, index) => ({
 const TopTenMovie = () => {
   const navigate = useNavigate();
 
-  const { settings } = useSiteSettings();
+  const { settings, loading: settingsLoading } = useSiteSettings();
   const sectionTitle = settings?.homeSections?.topTen?.title || "Top 10 Movies";
+
+  if (settingsLoading) {
+    return <RowSkeleton count={6} cardWidth={190} cardHeight={310} />;
+  }
 
   const promoted = settings?.promotedVideos?.topTen;
   const displayedMovies =

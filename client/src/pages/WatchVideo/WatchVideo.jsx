@@ -4,6 +4,7 @@ import { Clock, Film, ShieldAlert } from "lucide-react";
 
 import { api } from "../../api/axios";
 import VideoPlayer from "../../components/VideoPlayer/VideoPlayer";
+import PlayerSkeleton from "../../components/Skeletons/PlayerSkeleton";
 
 const WatchVideo = () => {
   const { id } = useParams();
@@ -32,11 +33,7 @@ const WatchVideo = () => {
   }, [id, navigate]);
 
   if (loading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center text-slate-400">
-        Loading...
-      </div>
-    );
+    return <PlayerSkeleton />;
   }
 
   if (!video) return null;

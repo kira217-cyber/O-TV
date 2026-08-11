@@ -1,13 +1,27 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import { Volume2, VolumeX } from "lucide-react";
+import { Play, RotateCcw, RotateCw, Volume2, VolumeX } from "lucide-react";
+import Skeleton from "react-loading-skeleton";
 
 import { api } from "../../api/axios";
+
+const formatTime = (seconds) => {
+  if (!Number.isFinite(seconds)) return "0:00";
+
+  const totalSeconds = Math.floor(seconds);
+  const m = Math.floor(totalSeconds / 60);
+  const s = (totalSeconds % 60).toString().padStart(2, "0");
+
+  return `${m}:${s}`;
+};
 
 const ShortItem = ({ video, base }) => {
   const containerRef = useRef(null);
   const videoRef = useRef(null);
   const [muted, setMuted] = useState(true);
+  const [playing, setPlaying] = useState(false);
+  const [current, setCurrent] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -29,17 +43,46 @@ const ShortItem = ({ video, base }) => {
     return () => observer.disconnect();
   }, []);
 
-  const toggleMute = () => {
+  const togglePlay = () => {
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
+
+    if (videoEl.paused || videoEl.ended) {
+      videoEl.play();
+    } else {
+      videoEl.pause();
+    }
+  };
+
+  const toggleMute = (event) => {
+    event.stopPropagation();
     const videoEl = videoRef.current;
     if (!videoEl) return;
     videoEl.muted = !videoEl.muted;
     setMuted(videoEl.muted);
   };
 
+  const skip = (event, delta) => {
+    event.stopPropagation();
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
+    videoEl.currentTime = Math.min(
+      Math.max(videoEl.currentTime + delta, 0),
+      videoEl.duration || 0,
+    );
+  };
+
+  const handleSeek = (event) => {
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
+    videoEl.currentTime = Number(event.target.value);
+    setCurrent(Number(event.target.value));
+  };
+
   return (
     <div
       ref={containerRef}
-      className="relative h-full w-full snap-start snap-always overflow-hidden rounded-2xl bg-black"
+      className="relative h-full w-full snap-start snap-always overflow-hidden bg-black"
     >
       <video
         ref={videoRef}
@@ -49,8 +92,24 @@ const ShortItem = ({ video, base }) => {
         muted
         loop
         playsInline
-        onClick={toggleMute}
+        onClick={togglePlay}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onTimeUpdate={(event) => setCurrent(event.currentTarget.currentTime)}
+        onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)}
       />
+
+      {!playing && (
+        <button
+          type="button"
+          onClick={togglePlay}
+          className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/20"
+        >
+          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+            <Play className="ml-1 h-8 w-8 text-white" fill="white" />
+          </span>
+        </button>
+      )}
 
       <button
         type="button"
@@ -60,16 +119,54 @@ const ShortItem = ({ video, base }) => {
         {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
       </button>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent px-4 pb-6 pt-16">
+      <button
+        type="button"
+        onClick={(event) => skip(event, -10)}
+        aria-label="Rewind 10 seconds"
+        className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm"
+      >
+        <RotateCcw className="h-5 w-5" />
+      </button>
+
+      <button
+        type="button"
+        onClick={(event) => skip(event, 10)}
+        aria-label="Forward 10 seconds"
+        className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm"
+      >
+        <RotateCw className="h-5 w-5" />
+      </button>
+
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent px-4 pb-4 pt-16">
         <Link
           to={`/watch/${video.id}`}
-          className="pointer-events-auto inline-block text-base font-bold text-white hover:text-[#16d6dc]"
+          onClick={(event) => event.stopPropagation()}
+          className="inline-block text-base font-bold text-white hover:text-[#16d6dc]"
         >
           {video.title}
         </Link>
         <p className="mt-1 truncate text-sm text-slate-300">
           {video.channelName}
         </p>
+
+        <div className="mt-3 flex items-center gap-2">
+          <span className="text-[11px] font-medium tabular-nums text-white/85">
+            {formatTime(current)}
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={duration || 0}
+            step={0.1}
+            value={current}
+            onClick={(event) => event.stopPropagation()}
+            onChange={handleSeek}
+            className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-white/25 accent-[#16d6dc]"
+          />
+          <span className="text-[11px] font-medium tabular-nums text-white/85">
+            {formatTime(duration)}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -102,19 +199,21 @@ const Shorts = () => {
   const base = api.defaults.baseURL;
 
   return (
-    <div className="mx-auto w-full max-w-[560px] px-4 pb-6 pt-6 text-white">
-      <h1 className="mb-4 text-2xl font-bold text-white sm:text-3xl">Shorts</h1>
-
+    <div className="h-[calc(100dvh-72px)] w-full bg-black text-white md:h-dvh">
       {loading ? (
-        <div className="flex min-h-[40vh] items-center justify-center text-slate-400">
-          Loading...
+        <div className="mx-auto h-full w-full max-w-[520px] space-y-3 overflow-hidden bg-[#111618] pb-3">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <div key={index} className="h-full w-full overflow-hidden">
+              <Skeleton height="100%" />
+            </div>
+          ))}
         </div>
       ) : videos.length === 0 ? (
-        <p className="py-16 text-center text-slate-400">
+        <div className="flex h-full w-full items-center justify-center text-slate-400">
           No shorts available right now.
-        </p>
+        </div>
       ) : (
-        <div className="h-[calc(100dvh-220px)] snap-y snap-mandatory space-y-3 overflow-y-auto pb-3">
+        <div className="mx-auto h-full w-full max-w-[520px] snap-y snap-mandatory overflow-y-auto">
           {videos.map((video) => (
             <ShortItem key={video.id} video={video} base={base} />
           ))}

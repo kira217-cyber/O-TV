@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router";
 import { PlayCircle } from "lucide-react";
+import Skeleton from "react-loading-skeleton";
 
 import { api } from "../../api/axios";
+import GridSkeleton from "../../components/Skeletons/GridSkeleton";
 
 const ChannelPage = () => {
   const { id } = useParams();
@@ -32,8 +34,13 @@ const ChannelPage = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center text-slate-400">
-        Loading...
+      <div className="mx-auto w-full max-w-[1680px] px-4 pb-16 text-white sm:px-6 lg:px-10 xl:px-[42px]">
+        <div className="flex items-center gap-4 pt-8">
+          <Skeleton circle width={96} height={96} />
+          <Skeleton width={220} height={32} />
+        </div>
+
+        <GridSkeleton cols="grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5" />
       </div>
     );
   }

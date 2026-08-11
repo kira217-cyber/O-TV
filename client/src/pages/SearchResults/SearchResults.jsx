@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router";
 import { PlayCircle } from "lucide-react";
 
 import { api } from "../../api/axios";
+import GridSkeleton from "../../components/Skeletons/GridSkeleton";
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
@@ -61,9 +62,7 @@ const SearchResults = () => {
       </h1>
 
       {loading ? (
-        <div className="flex min-h-[40vh] items-center justify-center text-slate-400">
-          Loading...
-        </div>
+        <GridSkeleton />
       ) : !query.trim() ? (
         <p className="py-16 text-center text-slate-400">
           Type something in the search bar to get started.

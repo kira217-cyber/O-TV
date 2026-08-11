@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 
 import { api } from "../../api/axios";
+import CircleGridSkeleton from "../../components/Skeletons/CircleGridSkeleton";
 
 const LIMIT = 24;
 
@@ -67,9 +68,10 @@ const CreatorChannels = () => {
       </div>
 
       {loading ? (
-        <div className="flex min-h-[40vh] items-center justify-center text-slate-400">
-          Loading...
-        </div>
+        <CircleGridSkeleton
+          count={LIMIT}
+          cols="grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
+        />
       ) : channels.length === 0 ? (
         <p className="py-16 text-center text-slate-400">No channels found.</p>
       ) : (
