@@ -8,82 +8,9 @@ import { alignHoverPreview } from "../../utils/alignHoverPreview";
 import { api } from "../../api/axios";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
 import RowSkeleton from "../Skeletons/RowSkeleton";
+import EmptySection from "../EmptySection/EmptySection";
 
 import "swiper/css";
-
-const DEFAULT_DESKTOP_BACKGROUND =
-  "https://asset.bioscopelive.com/uploads/images/2026/05/11/thumbnail_backgrounds_28a3a697b1aeef449bb7e55cc1b8192b_goplay_king_of_d_8.png";
-
-const DEFAULT_MOBILE_BACKGROUND =
-  "https://asset.bioscopelive.com/uploads/images/2026/05/12/poster_backgrounds_76bd705d7bfc7c6cce5d6f67db691a01_goplay_enjoy_f_for_phone_2.png?w=1920&q=75";
-
-const movieImages = [
-  "https://asset.bioscopelive.com/uploads/images/2025/09/22/posters_349d0f6eb82903463dca8ca945a4329a_goplay_nabab_llb.png",
-
-  "https://asset.bioscopelive.com/uploads/images/2026/05/05/posters_fca0547acb9f4164fa1d543fdd5174ab_goplay_tumi_amar_prem_prot.png",
-
-  "https://asset.bioscopelive.com/uploads/images/2026/05/05/posters_4b50e977ad3532ba594126ad1532792a_goplay_adorer_jamai_prot.png",
-
-  "https://asset.bioscopelive.com/uploads/images/2026/02/05/posters_fb1d8df99be34d0a36a1c2341de5c20c_goplay_bir_prot.png",
-];
-
-const baseMovies = [
-  {
-    title: "Nabab LLB",
-    category: "Drama",
-    description:
-      "Watch Nabab LLB and enjoy an exciting story featuring your favourite stars.",
-  },
-  {
-    title: "Tumi Amar Prem",
-    category: "Romance",
-    description:
-      "A beautiful romantic story about love, relationships and unexpected challenges.",
-  },
-  {
-    title: "Adorer Jamai",
-    category: "Comedy",
-    description:
-      "Enjoy a fun-filled family story packed with comedy, romance and entertainment.",
-  },
-  {
-    title: "Bir",
-    category: "Action",
-    description:
-      "An action-packed movie starring Shakib Khan, now available to watch for free.",
-  },
-];
-
-const movieTitleVersions = [
-  ["Nabab LLB", "Tumi Amar Prem", "Adorer Jamai", "Bir"],
-  [
-    "Nabab LLB Special",
-    "Tumi Amar Prem Special",
-    "Adorer Jamai Special",
-    "Bir Special",
-  ],
-  [
-    "Nabab LLB Full Movie",
-    "Tumi Amar Prem Full Movie",
-    "Adorer Jamai Full Movie",
-    "Bir Full Movie",
-  ],
-];
-
-/* ৪টি image তিনবার ব্যবহার করে মোট ১২টি card */
-const freeMovies = Array.from({ length: 12 }, (_, index) => {
-  const movieIndex = index % movieImages.length;
-  const versionIndex = Math.floor(index / movieImages.length);
-
-  return {
-    ...baseMovies[movieIndex],
-    id: index + 1,
-    title: movieTitleVersions[versionIndex][movieIndex],
-    image: movieImages[movieIndex],
-    badge: index % 3 === 0 ? "Exclusive" : "Free",
-    path: `/watch/free-movie-${index + 1}`,
-  };
-});
 
 const FreeMovie = () => {
   const swiperRef = useRef(null);
@@ -94,30 +21,40 @@ const FreeMovie = () => {
   const sectionTitle = section?.title || "Shakib Khan's Free Movie";
   const desktopBackground = section?.backgroundDesktop
     ? `${api.defaults.baseURL}${section.backgroundDesktop}`
-    : DEFAULT_DESKTOP_BACKGROUND;
+    : null;
   const mobileBackground = section?.backgroundMobile
     ? `${api.defaults.baseURL}${section.backgroundMobile}`
-    : DEFAULT_MOBILE_BACKGROUND;
+    : null;
 
   const promoted = settings?.promotedVideos?.freeMovie;
-  const displayedMovies =
-    promoted?.length > 0
-      ? promoted.map((video) => ({
-          id: video.id,
-          title: video.title,
-          badge: "",
-          category: video.category,
-          description: video.description || video.channelName,
-          image: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
-          path: `/watch/${video.id}`,
-        }))
-      : freeMovies;
+  const displayedMovies = (promoted || []).map((video) => ({
+    id: video.id,
+    title: video.title,
+    badge: "",
+    category: video.category,
+    description: video.description || video.channelName,
+    image: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
+    path: `/watch/${video.id}`,
+  }));
 
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
   if (settingsLoading) {
     return <RowSkeleton cardWidth={180} cardHeight={280} />;
+  }
+
+  if (displayedMovies.length === 0) {
+    return (
+      <section className="w-full overflow-hidden bg-[#111618] py-5 text-white sm:py-6 lg:py-8">
+        <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 lg:px-10 xl:px-[42px]">
+          <h2 className="mb-4 text-[21px] font-semibold tracking-[-0.4px] text-white sm:text-[25px] lg:text-[29px]">
+            {sectionTitle}
+          </h2>
+          <EmptySection />
+        </div>
+      </section>
+    );
   }
 
   const updateNavigation = (swiper) => {
@@ -180,22 +117,23 @@ const FreeMovie = () => {
     <section className="group/free-movie relative isolate w-full overflow-hidden bg-[#111618]/95 text-white">
       {/* Background */}
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <picture>
-          {/* Desktop background */}
-          <source
-            media="(min-width: 1024px)"
-            srcSet={desktopBackground}
-          />
+        {mobileBackground && (
+          <picture>
+            {/* Desktop background */}
+            {desktopBackground && (
+              <source media="(min-width: 1024px)" srcSet={desktopBackground} />
+            )}
 
-          {/* Mobile and tablet background */}
-          <img
-            src={mobileBackground}
-            alt=""
-            draggable={false}
-            fetchPriority="high"
-            className="h-full w-full select-none object-cover object-top"
-          />
-        </picture>
+            {/* Mobile and tablet background */}
+            <img
+              src={mobileBackground}
+              alt=""
+              draggable={false}
+              fetchPriority="high"
+              className="h-full w-full select-none object-cover object-top"
+            />
+          </picture>
+        )}
 
         <div className="absolute inset-x-0 bottom-0 h-[52%] bg-gradient-to-t from-[#087cca]/55 via-[#087cca]/20 to-transparent" />
       </div>

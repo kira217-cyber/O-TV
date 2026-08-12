@@ -18,6 +18,11 @@ import Sports from "../pages/Sports/Sports";
 import SearchResults from "../pages/SearchResults/SearchResults";
 import Shorts from "../pages/Shorts/Shorts";
 import New from "../pages/New/New";
+import TermsOfUse from "../pages/TermsOfUse/TermsOfUse";
+import PrivacyPolicy from "../pages/PrivacyPolicy/PrivacyPolicy";
+import Faq from "../pages/Faq/Faq";
+import Feedback from "../pages/Feedback/Feedback";
+import ContactUs from "../pages/ContactUs/ContactUs";
 
 export const routes = createBrowserRouter([
   {
@@ -72,6 +77,26 @@ export const routes = createBrowserRouter([
       {
         path: "new",
         element: <New />,
+      },
+      {
+        path: "terms-of-use",
+        element: <TermsOfUse />,
+      },
+      {
+        path: "privacy-policy",
+        element: <PrivacyPolicy />,
+      },
+      {
+        path: "faq",
+        element: <Faq />,
+      },
+      {
+        path: "feedback",
+        element: <Feedback />,
+      },
+      {
+        path: "contact-us",
+        element: <ContactUs />,
       },
       {
         path: "withdraw",

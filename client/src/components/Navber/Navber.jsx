@@ -15,6 +15,10 @@ const navItems = [
     path: "/",
   },
   {
+    name: "Live TV",
+    path: "/live-tv",
+  },
+  {
     name: "Movies",
     path: "/movies",
   },
@@ -29,10 +33,6 @@ const navItems = [
   {
     name: "Creator Channels",
     path: "/creator-channels",
-  },
-  {
-    name: "Live TV",
-    path: "/live-tv",
   },
 ];
 
@@ -121,9 +121,7 @@ const Navber = () => {
     <>
       <header
         className={`fixed inset-x-0 top-0 z-[9999] transition-all duration-300 ${
-          scrolled
-            ? "bg-[#111618]/95 backdrop-blur-xl"
-            : " bg-[#111618]"
+          scrolled ? "bg-[#111618]/95 backdrop-blur-xl" : " bg-[#111618]"
         }`}
       >
         {/* ================= DESKTOP NAVBAR ================= */}

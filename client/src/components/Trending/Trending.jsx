@@ -8,117 +8,9 @@ import { alignHoverPreview } from "../../utils/alignHoverPreview";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
 import { api } from "../../api/axios";
 import RowSkeleton from "../Skeletons/RowSkeleton";
+import EmptySection from "../EmptySection/EmptySection";
 
 import "swiper/css";
-
-const images = [
-  "https://asset.bioscopelive.com/uploads/images/2026/07/20/posters_cd783f8ad7f84b89303d114e20a6fb91_goplay_esp_vs_arg_p.png?w=1920&q=75",
-
-  "https://cms-cdn-bucket-prod.lionmultiverse.com/Media/THESENTINELSY_2025_SEN_Portrait_poster_76a67132c7.jpg",
-
-  "https://asset.bioscopelive.com/uploads/images/2026/07/16/posters_05b2dbcd73bd49dc32dc45da0671d4cc_goplay_lpl_2026_bioscope_p.jpg?w=320&q=75",
-
-  "https://origin-staticv2.sonyliv.com/videoasset_images/blitz_assets/1090536118/portraitThumb/1783154337635_1783151324207857_Balti_Portrait_Thumb_Dated_Rev.jpg?w=320",
-
-  "https://image.chorkicdn.com/uploads/images/2026/06/20/posters_b9779a31bc2de03175100604883100af_goplay_wn.jpg?w=128",
-
-  "https://img.rockstreamer.com/220xauto/images/rX7AXzT1h2Ye0gW5we4A.jpg?w=256&q=75",
-
-  "https://asset.bioscopelive.com/uploads/images/2026/07/22/posters_dac16f6e0cfcae37254e8d9a19a79778_goplay_jaffna_vs_colombo_3_30pm_22july_p.jpg?w=256&q=75",
-];
-
-const hoverImages = [
-  "https://asset.bioscopelive.com/uploads/images/2026/07/22/thumbnails_cfb121ea1074ee7d98649ef558656463_goplay_esp_vs_arg_l.png",
-
-  "https://cms-cdn-bucket-prod.lionmultiverse.com/Media/THESENTINELSY_2025_SEN_Landscape_hero_main_50bce3042c.jpg?w=1920",
-
-  "https://asset.bioscopelive.com/uploads/images/2026/07/22/thumbnails_ea636a515b6acc0eb5a2544202bdd44d_goplay_jaffna_vs_colombo_3_30pm_22july_l.jpg",
-
-  "https://origin-staticv2.sonyliv.com/videoasset_images/manage_file/1000020328/1783090229595817_Balti_Landscape_Thumb.jpg?w=1920&q=75",
-
-  "https://image.chorkicdn.com/uploads/images/2026/06/20/thumbnails_75c45f3483c9c9ac3cacb7fc1d26baf8_goplay_1200x675.jpg?w=1920",
-
-  "https://img.rockstreamer.com/1280xauto/images/cppbTH0u5sp9WMN1DqAC.jpg?w=1080&q=75",
-
-  "https://asset.bioscopelive.com/uploads/images/2026/07/22/thumbnails_ea636a515b6acc0eb5a2544202bdd44d_goplay_jaffna_vs_colombo_3_30pm_22july_l.jpg",
-];
-
-const baseDetails = [
-  {
-    title: "Spain vs Argentina",
-    badge: "Exclusive",
-    category: "Sports",
-    description: "Spain vs Argentina live match on O-TV.",
-  },
-  {
-    title: "The Sentinels",
-    badge: "",
-    category: "Series",
-    description: "Watch The Sentinels exclusively on O-TV.",
-  },
-  {
-    title: "LPL 2026",
-    badge: "Exclusive",
-    category: "Sports",
-    description: "LPL T20 match live on iScreen.",
-  },
-  {
-    title: "Balti",
-    badge: "New Release",
-    category: "Movie",
-    description: "Stream Balti now, exclusively on O-TV.",
-  },
-  {
-    title: "O-TV Special",
-    badge: "New Release",
-    category: "Drama",
-    description: "Watch the latest O-TV special presentation.",
-  },
-  {
-    title: "Featured Entertainment",
-    badge: "Exclusive",
-    category: "Entertainment",
-    description: "Your favourite entertainment is streaming now.",
-  },
-  {
-    title: "Jaffna Kings vs Colombo Kaps",
-    badge: "Exclusive",
-    category: "Sports",
-    description: "LPL T20 match live on iScreen.",
-  },
-];
-
-const firstSevenItems = baseDetails.map((item, index) => ({
-  ...item,
-  id: index + 1,
-  image: images[index],
-  hoverImage: hoverImages[index],
-  path: `/watch/trending-${index + 1}`,
-}));
-
-const secondSevenItems = baseDetails.map((item, index) => ({
-  ...item,
-  id: index + 8,
-  title:
-    index === 0
-      ? "Spain vs Argentina Highlights"
-      : index === 1
-        ? "The Sentinels Special"
-        : index === 2
-          ? "LPL 2026 Highlights"
-          : index === 3
-            ? "Balti Special"
-            : index === 4
-              ? "O-TV Special Episode"
-              : index === 5
-                ? "Featured Entertainment Special"
-                : "Jaffna vs Colombo Highlights",
-  image: images[index],
-  hoverImage: hoverImages[index],
-  path: `/watch/trending-${index + 8}`,
-}));
-
-const trendingItems = [...firstSevenItems, ...secondSevenItems];
 
 const Trending = () => {
   const swiperRef = useRef(null);
@@ -128,25 +20,35 @@ const Trending = () => {
   const sectionTitle = settings?.homeSections?.trending?.title || "Trending";
 
   const promoted = settings?.promotedVideos?.trending;
-  const displayedItems =
-    promoted?.length > 0
-      ? promoted.map((video) => ({
-          id: video.id,
-          title: video.title,
-          badge: "",
-          category: video.category,
-          description: video.description || video.channelName,
-          image: `${api.defaults.baseURL}${video.thumbnail?.portrait}`,
-          hoverImage: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
-          path: `/watch/${video.id}`,
-        }))
-      : trendingItems;
+  const displayedItems = (promoted || []).map((video) => ({
+    id: video.id,
+    title: video.title,
+    badge: "",
+    category: video.category,
+    description: video.description || video.channelName,
+    image: `${api.defaults.baseURL}${video.thumbnail?.portrait}`,
+    hoverImage: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
+    path: `/watch/${video.id}`,
+  }));
 
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
   if (settingsLoading) {
     return <RowSkeleton cardWidth={180} cardHeight={280} />;
+  }
+
+  if (displayedItems.length === 0) {
+    return (
+      <section className="w-full overflow-hidden bg-[#111618] py-5 text-white sm:py-6 lg:py-8">
+        <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 lg:px-10 xl:px-[42px]">
+          <h2 className="mb-4 text-[22px] font-semibold tracking-[-0.5px] text-white sm:text-[26px] lg:text-[30px]">
+            {sectionTitle}
+          </h2>
+          <EmptySection />
+        </div>
+      </section>
+    );
   }
 
   const updateNavigation = (swiper) => {

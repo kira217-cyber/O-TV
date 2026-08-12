@@ -8,96 +8,10 @@ import { alignHoverPreview } from "../../utils/alignHoverPreview";
 import { api } from "../../api/axios";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
 import RowSkeleton from "../Skeletons/RowSkeleton";
+import EmptySection from "../EmptySection/EmptySection";
 
 import "swiper/css";
 import "swiper/css/free-mode";
-
-const DEFAULT_DESKTOP_BACKGROUND =
-  "https://asset.bioscopelive.com/uploads/images/2026/02/02/thumbnail_backgrounds_2ecce0eec8885a0d9356ccf210c01107_goplay_hollywood_drop.png?w=1920&q=75";
-
-const DEFAULT_MOBILE_BACKGROUND =
-  "https://asset.bioscopelive.com/uploads/images/2026/04/12/poster_backgrounds_d509fea351217249170da515fa1008ab_goplay_hollywood_phone.png?w=1920&q=75";
-
-const hollywoodImages = [
-  "https://cms-cdn-bucket-prod.lionmultiverse.com/Media/12_STRONG_0_Y2018_MEN_Landscape_hero_main_c105b17c70.jpg?w=480&q=75",
-
-  "https://cms-cdn-bucket-prod.lionmultiverse.com/Media/LOGANLUCKYY_2017_MEN_Landscape_hero_main_2f31c93fb8.jpg?w=480&q=75",
-
-  "https://origin-staticv2.sonyliv.com/videoasset_images/thefabelmans_english_multilang_landscape_thumb.jpg?w=480&q=75",
-
-  "https://cms-cdn-bucket-prod.lionmultiverse.com/Media/HUNTERKILLERY_2018_MEN_Landscape_hero_main_f0aab1662a.jpg?w=480&q=75",
-
-  "https://cms-cdn-bucket-prod.lionmultiverse.com/Media/HUNTERKILLERY_2018_MEN_Landscape_hero_main_f0aab1662a.jpg?w=480&q=75",
-
-  "https://cms-cdn-bucket-prod.lionmultiverse.com/Media/JOHNWICKCHAPTER_2_Y2017_M_2_FJOHNWICKCHAPTER_2_Y2017_M_LGI_Landscape_Hero_Main_7c8819bab4.jpg?w=480&q=75",
-
-  "https://cms-cdn-bucket-prod.lionmultiverse.com/Media/JOHNWICKY_2014_MEN_Landscape_Hero_Main_81ec5a9e2a.jpg?w=480&q=75",
-];
-
-const hollywoodDetails = [
-  {
-    title: "12 Strong",
-    category: "Action",
-    description:
-      "A team of elite soldiers undertakes a dangerous mission in the aftermath of September 11.",
-  },
-  {
-    title: "Logan Lucky",
-    category: "Comedy",
-    description:
-      "Two brothers attempt an elaborate heist during a major racing event.",
-  },
-  {
-    title: "The Fabelmans",
-    category: "Drama",
-    description:
-      "A young filmmaker discovers the power of cinema while uncovering a family secret.",
-  },
-  {
-    title: "Hunter Killer",
-    category: "Action",
-    description:
-      "An American submarine captain joins an elite team on a dangerous rescue mission.",
-  },
-  {
-    title: "Hunter Killer Special",
-    category: "Thriller",
-    description:
-      "Experience a tense underwater mission filled with danger, courage and action.",
-  },
-  {
-    title: "John Wick: Chapter 2",
-    category: "Action",
-    description:
-      "John Wick is forced back into action by a former associate seeking control of a secret guild.",
-  },
-  {
-    title: "John Wick",
-    category: "Action",
-    description:
-      "A retired assassin returns to the dangerous world he left behind to seek justice.",
-  },
-];
-
-const firstSevenMovies = hollywoodDetails.map((movie, index) => ({
-  ...movie,
-  id: index + 1,
-  image: hollywoodImages[index],
-  badge: "Exclusive",
-  path: `/watch/hollywood-${index + 1}`,
-}));
-
-const secondSevenMovies = hollywoodDetails.map((movie, index) => ({
-  ...movie,
-  id: index + 8,
-  title: `${movie.title} Special`,
-  description: `Watch ${movie.title} in this special Hollywood blockbuster presentation.`,
-  image: hollywoodImages[index],
-  badge: index % 3 === 0 ? "New Release" : "Exclusive",
-  path: `/watch/hollywood-${index + 8}`,
-}));
-
-const hollywoodMovies = [...firstSevenMovies, ...secondSevenMovies];
 
 const Hollywood = () => {
   const swiperRef = useRef(null);
@@ -108,30 +22,40 @@ const Hollywood = () => {
   const sectionTitle = section?.title || "Hollywood Blockbuster Legends";
   const desktopBackground = section?.backgroundDesktop
     ? `${api.defaults.baseURL}${section.backgroundDesktop}`
-    : DEFAULT_DESKTOP_BACKGROUND;
+    : null;
   const mobileBackground = section?.backgroundMobile
     ? `${api.defaults.baseURL}${section.backgroundMobile}`
-    : DEFAULT_MOBILE_BACKGROUND;
+    : null;
 
   const promoted = settings?.promotedVideos?.hollywood;
-  const displayedMovies =
-    promoted?.length > 0
-      ? promoted.map((video) => ({
-          id: video.id,
-          title: video.title,
-          badge: "",
-          category: video.category,
-          description: video.description || video.channelName,
-          image: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
-          path: `/watch/${video.id}`,
-        }))
-      : hollywoodMovies;
+  const displayedMovies = (promoted || []).map((video) => ({
+    id: video.id,
+    title: video.title,
+    badge: "",
+    category: video.category,
+    description: video.description || video.channelName,
+    image: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
+    path: `/watch/${video.id}`,
+  }));
 
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
   if (settingsLoading) {
     return <RowSkeleton cardWidth={180} cardHeight={280} />;
+  }
+
+  if (displayedMovies.length === 0) {
+    return (
+      <section className="w-full overflow-hidden bg-[#111618] py-5 text-white sm:py-6 lg:py-8">
+        <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 lg:px-10 xl:px-[42px]">
+          <h2 className="mb-4 text-[21px] font-semibold tracking-[-0.4px] text-white sm:text-[25px] lg:text-[29px]">
+            {sectionTitle}
+          </h2>
+          <EmptySection />
+        </div>
+      </section>
+    );
   }
 
   const updateNavigation = (swiper) => {
@@ -194,22 +118,23 @@ const Hollywood = () => {
     <section className="group/hollywood relative isolate w-full overflow-hidden bg-[#111618]/95 text-white">
       {/* Background */}
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <picture>
-          {/* Desktop background */}
-          <source
-            media="(min-width: 1024px)"
-            srcSet={desktopBackground}
-          />
+        {mobileBackground && (
+          <picture>
+            {/* Desktop background */}
+            {desktopBackground && (
+              <source media="(min-width: 1024px)" srcSet={desktopBackground} />
+            )}
 
-          {/* Mobile and tablet background */}
-          <img
-            src={mobileBackground}
-            alt=""
-            draggable={false}
-            fetchPriority="high"
-            className="h-full w-full select-none object-cover object-top"
-          />
-        </picture>
+            {/* Mobile and tablet background */}
+            <img
+              src={mobileBackground}
+              alt=""
+              draggable={false}
+              fetchPriority="high"
+              className="h-full w-full select-none object-cover object-top"
+            />
+          </picture>
+        )}
 
         <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-[#8500a8]/65 via-[#8500a8]/25 to-transparent" />
       </div>

@@ -7,75 +7,10 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { api } from "../../api/axios";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
 import CircleRowSkeleton from "../Skeletons/CircleRowSkeleton";
+import EmptySection from "../EmptySection/EmptySection";
 
 import "swiper/css";
 import "swiper/css/free-mode";
-
-const heroes = [
-  {
-    id: 1,
-    name: "Salman Khan",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2026/04/02/thumbnails_56d25327416ac13049d27f6a50117e1e_goplay_salman_khan.png?w=320&q=75",
-    path: "/hero/salman-khan",
-  },
-  {
-    id: 2,
-    name: "Shakib Khan",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2026/04/02/thumbnails_abc8f3317e21ed83c3af4b41822de915_goplay_shakib_khan_1.png?w=320&q=75",
-    path: "/hero/shakib-khan",
-  },
-  {
-    id: 3,
-    name: "Afran Nisho",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2026/04/05/thumbnails_f7fb7e36d14483cc7a6994fa378923bd_goplay_afran_nisho.png?w=320&q=75",
-    path: "/hero/afran-nisho",
-  },
-  {
-    id: 4,
-    name: "Chanchal Chowdhury",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2026/04/05/thumbnails_bd5a9893b631fbdf290dff7ae00d700a_goplay_chanchal_chowdhury_1.png?w=320&q=75",
-    path: "/hero/chanchal-chowdhury",
-  },
-  {
-    id: 5,
-    name: "Vijay Sethupathi",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2026/04/02/thumbnails_da6731de3edb6a14c1c60ff6b70a1fab_goplay_vijay_setupati.png?w=320&q=75",
-    path: "/hero/vijay-sethupathi",
-  },
-  {
-    id: 6,
-    name: "Mosharraf Karim",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2026/04/16/thumbnails_b347c885703ef6db0cbfa7c8fea61255_goplay_mosaraf_karim_1.png?w=320&q=75",
-    path: "/hero/mosharraf-karim",
-  },
-  {
-    id: 7,
-    name: "Akshay Kumar",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2026/04/02/thumbnails_4996eca279c3a3358333a7e85d1f959f_goplay_akshay_kumar.png?w=320&q=75",
-    path: "/hero/akshay-kumar",
-  },
-  {
-    id: 8,
-    name: "Arifin Shuvoo",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2026/04/02/thumbnails_28c84033908b40e6c5836a05116bf954_goplay_arifin_shuvo_1.png?w=320&q=75",
-    path: "/hero/arifin-shuvoo",
-  },
-  {
-    id: 9,
-    name: "Pritom Hasan",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2026/04/02/thumbnails_67e48a7d7b7fb151a027aafa32510738_goplay_pritom_hasan.png?w=320&q=75",
-    path: "/hero/pritom-hasan",
-  },
-];
 
 const FavoriteHero = () => {
   const swiperRef = useRef(null);
@@ -84,21 +19,31 @@ const FavoriteHero = () => {
   const sectionTitle =
     settings?.homeSections?.favoriteHero?.title || "Pick Your Favorite Hero";
 
-  const displayedHeroes =
-    settings?.heroSlides?.length > 0
-      ? settings.heroSlides.map((slide, index) => ({
-          id: slide._id || slide.id || index,
-          name: slide.name || "Hero",
-          image: `${api.defaults.baseURL}${slide.image}`,
-          path: "#",
-        }))
-      : heroes;
+  const displayedHeroes = (settings?.heroSlides || []).map((slide, index) => ({
+    id: slide._id || slide.id || index,
+    name: slide.name || "Hero",
+    image: `${api.defaults.baseURL}${slide.image}`,
+    path: "#",
+  }));
 
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
   if (settingsLoading) {
     return <CircleRowSkeleton />;
+  }
+
+  if (displayedHeroes.length === 0) {
+    return (
+      <section className="w-full overflow-hidden bg-[#111618] py-5 text-white sm:py-7 lg:py-8">
+        <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 lg:px-10 xl:px-[42px]">
+          <h2 className="mb-4 text-[22px] font-semibold tracking-[-0.5px] text-white sm:text-[26px] lg:text-[30px]">
+            {sectionTitle}
+          </h2>
+          <EmptySection />
+        </div>
+      </section>
+    );
   }
 
   const updateNavigation = (swiper) => {

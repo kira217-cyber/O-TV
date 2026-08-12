@@ -8,122 +8,10 @@ import { alignHoverPreview } from "../../utils/alignHoverPreview";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
 import { api } from "../../api/axios";
 import RowSkeleton from "../Skeletons/RowSkeleton";
+import EmptySection from "../EmptySection/EmptySection";
 
 import "swiper/css";
 import "swiper/css/free-mode";
-
-const cardImages = [
-  "https://img.rockstreamer.com/220xauto/images/LfnaexG8XV7PJ8sNJitU.png?w=320",
-
-  "https://img.rockstreamer.com/220xauto/images/QxLHtBf6jHvOkjs1utsk.jpg?w=320",
-
-  "https://klikk.co.in/api/uploads/mv/IMG1782455311.jpg?w=640",
-
-  "https://origin-staticv2.sonyliv.com/portrait_thumb/aahat1_Portrait_Thumb.jpg?w=320",
-];
-
-const hoverImages = [
-  "https://origin-staticv2.sonyliv.com/videoasset_images/manage_file/1000020273/1782995739268641_Karakkam_2jul_landscape_thumb.jpg?w=480&q=75",
-
-  "https://image.hoichoicdn.com/unsafe/805a58db3d4f-4525-ac76-d176383745d6-Bhutopurbo_16x9-1.jpg?w=480&q=75",
-
-  "https://asset.bioscopelive.com/uploads/images/2026/03/26/thumbnails_df88f89b14d07a403b00f597821fa679_goplay_chokro_2.jpg?w=480&q=75",
-
-  "https://image.chorkicdn.com/uploads/images/2026/02/18/thumbnails_1991df59c1a6f202de10b9f625e400a9_goplay_1200x675.jpg?w=480&q=75",
-
-  "https://image.hoichoicdn.com/unsafe/2716e1123817-4195-afa9-5c61d85ca9c7-16x9.jpg?w=480&q=75",
-
-  "https://daex9l847wg3n.cloudfront.net/shemoutputimages/Page-16/660d770eb1e0d21ad672d686/xl_image_16_9_1769505251.jpg?1769505219?w=480&q=75",
-
-  "https://image.hoichoicdn.com/unsafe/34d07d012708-4644-b30c-4f940ffa1c1b-16x9_WO_Date.jpg?w=480&q=75",
-
-  "https://origin-staticv2.sonyliv.com/videoasset_images/darr_mall_2014_18sep_landscape_thumb.png?w=480&q=75",
-
-  "https://image.chorkicdn.com/uploads/images/2024/12/18/thumbnails_6014a5314b11dd12160a2b8a4a6d6bff_goplay_1200x675_wn.jpg?w=480&q=75",
-
-  "https://origin-staticv2.sonyliv.com/landscape_thumb/aahat1_landscape_Thumb.jpg?w=480&q=75",
-];
-
-const horrorDetails = [
-  {
-    title: "Karakkam",
-    badge: "New Release",
-    category: "Horror",
-    description:
-      "A terrifying mystery unfolds as an unknown force threatens everyone in its path.",
-  },
-  {
-    title: "Bhutopurbo",
-    badge: "Exclusive",
-    category: "Supernatural",
-    description:
-      "A chilling supernatural story where the secrets of the past return to haunt the present.",
-  },
-  {
-    title: "Chokro",
-    badge: "Exclusive",
-    category: "Thriller",
-    description:
-      "A deadly cycle of fear and mystery traps everyone who attempts to escape.",
-  },
-  {
-    title: "The Haunted Night",
-    badge: "New Release",
-    category: "Horror",
-    description:
-      "One terrifying night changes everything when an unseen presence begins hunting its victims.",
-  },
-  {
-    title: "Shadows of Fear",
-    badge: "",
-    category: "Mystery",
-    description:
-      "Dark shadows conceal a horrifying truth that was never meant to be discovered.",
-  },
-  {
-    title: "The Possession",
-    badge: "Exclusive",
-    category: "Supernatural",
-    description:
-      "A family encounters a powerful supernatural force that refuses to let them escape.",
-  },
-  {
-    title: "The Dark Secret",
-    badge: "Exclusive",
-    category: "Horror",
-    description:
-      "A hidden secret awakens an ancient evil and turns an ordinary night into a nightmare.",
-  },
-  {
-    title: "Darr @ The Mall",
-    badge: "New Release",
-    category: "Horror",
-    description:
-      "A shopping mall becomes the setting for a terrifying night of supernatural horror.",
-  },
-  {
-    title: "Whispers in the Dark",
-    badge: "",
-    category: "Thriller",
-    description:
-      "Mysterious whispers lead to a frightening discovery buried deep in the darkness.",
-  },
-  {
-    title: "Aahat",
-    badge: "Exclusive",
-    category: "Horror Series",
-    description:
-      "Experience terrifying supernatural stories filled with mystery, fear and suspense.",
-  },
-];
-
-const horrorItems = horrorDetails.map((item, index) => ({
-  ...item,
-  id: index + 1,
-  image: cardImages[index % cardImages.length],
-  hoverImage: hoverImages[index],
-  path: `/watch/horror-${index + 1}`,
-}));
 
 const Horror = () => {
   const swiperRef = useRef(null);
@@ -133,25 +21,35 @@ const Horror = () => {
   const sectionTitle = settings?.homeSections?.horror?.title || "Horror";
 
   const promoted = settings?.promotedVideos?.horror;
-  const displayedItems =
-    promoted?.length > 0
-      ? promoted.map((video) => ({
-          id: video.id,
-          title: video.title,
-          badge: "",
-          category: video.category,
-          description: video.description || video.channelName,
-          image: `${api.defaults.baseURL}${video.thumbnail?.portrait}`,
-          hoverImage: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
-          path: `/watch/${video.id}`,
-        }))
-      : horrorItems;
+  const displayedItems = (promoted || []).map((video) => ({
+    id: video.id,
+    title: video.title,
+    badge: "",
+    category: video.category,
+    description: video.description || video.channelName,
+    image: `${api.defaults.baseURL}${video.thumbnail?.portrait}`,
+    hoverImage: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
+    path: `/watch/${video.id}`,
+  }));
 
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
   if (settingsLoading) {
     return <RowSkeleton cardWidth={180} cardHeight={280} />;
+  }
+
+  if (displayedItems.length === 0) {
+    return (
+      <section className="w-full overflow-hidden bg-[#111618] py-5 text-white sm:py-6 lg:py-8">
+        <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 lg:px-10 xl:px-[42px]">
+          <h2 className="mb-4 text-[22px] font-semibold tracking-[-0.5px] text-white sm:text-[26px] lg:text-[30px]">
+            {sectionTitle}
+          </h2>
+          <EmptySection />
+        </div>
+      </section>
+    );
   }
 
   const updateNavigation = (swiper) => {

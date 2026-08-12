@@ -13,6 +13,7 @@ import adminSiteRoutes from "./routes/adminSiteRoutes.js";
 import publicSiteRoutes from "./routes/publicSiteRoutes.js";
 import promotionRoutes from "./routes/promotionRoutes.js";
 import adminPromotionRoutes from "./routes/adminPromotionRoutes.js";
+import adminAdCampaignRoutes from "./routes/adminAdCampaignRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -37,6 +38,7 @@ app.use("/api/admin/site", adminSiteRoutes);
 app.use("/api/site", publicSiteRoutes);
 app.use("/api/studio/promotions", promotionRoutes);
 app.use("/api/admin/promotions", adminPromotionRoutes);
+app.use("/api/admin/ad-campaigns", adminAdCampaignRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });

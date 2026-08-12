@@ -9,6 +9,7 @@ import Promotion, { PROMOTABLE_SECTIONS } from "../models/Promotion.js";
 import Video, { CATEGORY_OPTIONS } from "../models/Video.js";
 import StudioUser from "../models/StudioUser.js";
 import LiveTvChannel from "../models/LiveTvChannel.js";
+import AdCampaign from "../models/AdCampaign.js";
 
 import { successResponse, errorResponse } from "../utils/response.js";
 import { ensureHomeSection, ensureAdsSlot } from "../utils/siteDefaults.js";
@@ -114,6 +115,68 @@ router.get("/settings", async (req, res) => {
         logo: user.channel.logo,
       })),
       liveTv: liveTvChannels,
+    });
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+});
+
+// Currently-active in-player ad campaigns for a specific video or Live TV
+// channel — global campaigns plus any single-targeted at this exact id.
+router.get("/ad-campaigns", async (req, res) => {
+  try {
+    const { video, liveTv } = req.query || {};
+
+    if (!video && !liveTv) {
+      return errorResponse(res, "A video or liveTv target id is required", 400);
+    }
+
+    const now = new Date();
+
+    const targetFilter = video
+      ? {
+          $or: [
+            { videoScope: "all" },
+            { videoScope: "single", targetVideo: video },
+          ],
+        }
+      : {
+          $or: [
+            { liveTvScope: "all" },
+            { liveTvScope: "single", targetLiveTvChannel: liveTv },
+          ],
+        };
+
+    const campaigns = await AdCampaign.find({
+      enabled: true,
+      startDate: { $lte: now },
+      $and: [
+        { $or: [{ scheduleType: "lifetime" }, { endDate: { $gte: now } }] },
+        targetFilter,
+      ],
+    }).sort({ createdAt: 1 });
+
+    return successResponse(res, "Ad campaigns loaded", {
+      campaigns: campaigns.map((campaign) =>
+        campaign.type === "video"
+          ? {
+              id: campaign._id,
+              type: campaign.type,
+              video: campaign.video,
+              skipAfterSeconds: campaign.skipAfterSeconds,
+              clickUrl: campaign.clickUrl,
+              firstDelaySeconds: campaign.firstDelaySeconds,
+              intervalSeconds: campaign.intervalSeconds,
+            }
+          : {
+              id: campaign._id,
+              type: campaign.type,
+              imageSections: campaign.imageSections,
+              displayDurationSeconds: campaign.displayDurationSeconds,
+              firstDelaySeconds: campaign.firstDelaySeconds,
+              intervalSeconds: campaign.intervalSeconds,
+            },
+      ),
     });
   } catch (error) {
     return errorResponse(res, error.message, 500);

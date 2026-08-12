@@ -8,6 +8,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
 import { api } from "../../api/axios";
 import RowSkeleton from "../Skeletons/RowSkeleton";
+import EmptySection from "../EmptySection/EmptySection";
 
 import number1 from "../../assets/topTenNumbers/number-1.svg";
 import number2 from "../../assets/topTenNumbers/number-2.svg";
@@ -36,104 +37,6 @@ const numberImages = [
   number10,
 ];
 
-const movieImages = [
-  "https://origin-staticv2.sonyliv.com/videoasset_images/manage_file/1000020328/1783090229819817_Balti_Portrait_Thumb_NewSeason.jpg?w=1920",
-  "https://image.chorkicdn.com/uploads/images/2026/07/22/posters_910647eb6bc29d153bcba713003d92b4_goplay_800x1200jpg.jpeg?w=1920",
-  "https://jcwsw2vt33.gpcdn.net/uploads/images/2022/08/09/posters_d700c0f6c101e8a97b1a67607d9ff7db_goplay_kosem_sultan_2.jpg?w=1800&q=75",
-  "https://asset.bioscopelive.com/uploads/images/2025/03/10/images_df790b42b08683de99afb3997cef592e_goplay_golui_port.jpg",
-];
-
-const movieInformation = [
-  {
-    title: "Balti",
-    duration: "2h 05m",
-    year: "2026",
-    rating: "U/A",
-    path: "/movie/balti",
-    exclusive: true,
-  },
-  {
-    title: "Rockstar",
-    duration: "2h 15m",
-    year: "2026",
-    rating: "G",
-    path: "/movie/rockstar",
-    exclusive: true,
-  },
-  {
-    title: "Kosem Sultan",
-    duration: "45m",
-    year: "2025",
-    rating: "U/A",
-    path: "/movie/kosem-sultan",
-    exclusive: false,
-  },
-  {
-    title: "Golui",
-    duration: "2h 10m",
-    year: "2025",
-    rating: "G",
-    path: "/movie/golui",
-    exclusive: true,
-  },
-  {
-    title: "Balti: New Season",
-    duration: "1h 58m",
-    year: "2026",
-    rating: "G",
-    path: "/movie/balti-new-season",
-    exclusive: true,
-  },
-  {
-    title: "The Last Rockstar",
-    duration: "2h 06m",
-    year: "2026",
-    rating: "U/A",
-    path: "/movie/last-rockstar",
-    exclusive: false,
-  },
-  {
-    title: "Sultan's Empire",
-    duration: "48m",
-    year: "2025",
-    rating: "U/A",
-    path: "/movie/sultans-empire",
-    exclusive: true,
-  },
-  {
-    title: "Golui Returns",
-    duration: "2h 02m",
-    year: "2026",
-    rating: "G",
-    path: "/movie/golui-returns",
-    exclusive: false,
-  },
-  {
-    title: "Balti Special",
-    duration: "1h 52m",
-    year: "2026",
-    rating: "G",
-    path: "/movie/balti-special",
-    exclusive: true,
-  },
-  {
-    title: "Rockstar Live",
-    duration: "2h 20m",
-    year: "2026",
-    rating: "U/A",
-    path: "/movie/rockstar-live",
-    exclusive: true,
-  },
-];
-
-const topTenMovies = movieInformation.map((movie, index) => ({
-  id: index + 1,
-  rank: index + 1,
-  ...movie,
-  numberImage: numberImages[index],
-  image: movieImages[index % movieImages.length],
-}));
-
 const TopTenMovie = () => {
   const navigate = useNavigate();
 
@@ -145,21 +48,31 @@ const TopTenMovie = () => {
   }
 
   const promoted = settings?.promotedVideos?.topTen;
-  const displayedMovies =
-    promoted?.length > 0
-      ? promoted.slice(0, 10).map((video, index) => ({
-          id: video.id,
-          rank: index + 1,
-          title: video.title,
-          duration: video.duration,
-          year: "",
-          rating: video.maturityRating,
-          path: `/watch/${video.id}`,
-          exclusive: false,
-          numberImage: numberImages[index],
-          image: `${api.defaults.baseURL}${video.thumbnail?.portrait}`,
-        }))
-      : topTenMovies;
+  const displayedMovies = (promoted || []).slice(0, 10).map((video, index) => ({
+    id: video.id,
+    rank: index + 1,
+    title: video.title,
+    duration: video.duration,
+    year: "",
+    rating: video.maturityRating,
+    path: `/watch/${video.id}`,
+    exclusive: false,
+    numberImage: numberImages[index],
+    image: `${api.defaults.baseURL}${video.thumbnail?.portrait}`,
+  }));
+
+  if (displayedMovies.length === 0) {
+    return (
+      <section className="w-full overflow-hidden bg-[#111618] py-5 sm:py-7 lg:py-9">
+        <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-8 lg:px-10 xl:px-[120px]">
+          <h2 className="mb-4 text-[21px] font-semibold leading-none text-white sm:text-[25px] lg:text-[28px]">
+            {sectionTitle}
+          </h2>
+          <EmptySection />
+        </div>
+      </section>
+    );
+  }
 
   const handlePlay = (movie) => {
     navigate(movie.path);

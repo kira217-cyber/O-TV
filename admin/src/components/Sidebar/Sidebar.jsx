@@ -25,6 +25,7 @@ import {
   FaVideo,
   FaCloudUploadAlt,
   FaBullhorn,
+  FaAd,
 } from "react-icons/fa";
 import { FaNotesMedical } from "react-icons/fa6";
 import { IoFootstepsOutline } from "react-icons/io5";
@@ -100,6 +101,12 @@ const Sidebar = () => {
         to: "/promotion-requests",
         icon: <FaBullhorn />,
         text: "Promotion Requests",
+      },
+      {
+        key: "ad-campaigns",
+        to: "/ad-campaigns",
+        icon: <FaAd />,
+        text: "Ad Campaigns",
       },
       {
         key: "__mother__",

@@ -8,102 +8,9 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { api } from "../../api/axios";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
 import BannerSkeleton from "../Skeletons/BannerSkeleton";
+import EmptySection from "../EmptySection/EmptySection";
 
 import "swiper/css";
-
-const sliderItems = [
-  {
-    id: 1,
-    title: "Spain vs Argentina",
-    desktopImage:
-      "https://asset.bioscopelive.com/uploads/images/2026/07/22/thumbnails_cfb121ea1074ee7d98649ef558656463_goplay_esp_vs_arg_l.png",
-    mobileImage:
-      "https://asset.bioscopelive.com/uploads/images/2026/07/20/posters_cd783f8ad7f84b89303d114e20a6fb91_goplay_esp_vs_arg_p.png?w=1920&q=75",
-    duration: "90m",
-    year: "2026",
-    rating: "G",
-    exclusive: true,
-    path: "/watch/spain-vs-argentina",
-  },
-  {
-    id: 2,
-    title: "The Sentinels",
-    desktopImage:
-      "https://cms-cdn-bucket-prod.lionmultiverse.com/Media/THESENTINELSY_2025_SEN_Landscape_hero_main_50bce3042c.jpg?w=1920",
-    mobileImage:
-      "https://cms-cdn-bucket-prod.lionmultiverse.com/Media/THESENTINELSY_2025_SEN_Portrait_poster_76a67132c7.jpg",
-    duration: "1h 55m",
-    year: "2025",
-    rating: "U/A",
-    exclusive: false,
-    path: "/watch/the-sentinels",
-  },
-  {
-    id: 3,
-    title: "LPL 2026",
-    desktopImage:
-      "https://asset.bioscopelive.com/uploads/images/2026/07/22/thumbnails_ea636a515b6acc0eb5a2544202bdd44d_goplay_jaffna_vs_colombo_3_30pm_22july_l.jpg",
-    mobileImage:
-      "https://asset.bioscopelive.com/uploads/images/2026/07/16/posters_05b2dbcd73bd49dc32dc45da0671d4cc_goplay_lpl_2026_bioscope_p.jpg?w=320&q=75",
-    duration: "Live",
-    year: "2026",
-    rating: "G",
-    exclusive: true,
-    path: "/watch/lpl-2026",
-  },
-  {
-    id: 4,
-    title: "Balti",
-    desktopImage:
-      "https://origin-staticv2.sonyliv.com/videoasset_images/manage_file/1000020328/1783090229595817_Balti_Landscape_Thumb.jpg?w=1920&q=75",
-    mobileImage:
-      "https://origin-staticv2.sonyliv.com/videoasset_images/blitz_assets/1090536118/portraitThumb/1783154337635_1783151324207857_Balti_Portrait_Thumb_Dated_Rev.jpg?w=320",
-    duration: "2h 05m",
-    year: "2026",
-    rating: "U/A",
-    exclusive: false,
-    path: "/watch/balti",
-  },
-  {
-    id: 5,
-    title: "O-TV Special",
-    desktopImage:
-      "https://image.chorkicdn.com/uploads/images/2026/06/20/thumbnails_75c45f3483c9c9ac3cacb7fc1d26baf8_goplay_1200x675.jpg?w=1920",
-    mobileImage:
-      "https://image.chorkicdn.com/uploads/images/2026/06/20/posters_b9779a31bc2de03175100604883100af_goplay_wn.jpg?w=128",
-    duration: "1h 45m",
-    year: "2026",
-    rating: "G",
-    exclusive: true,
-    path: "/watch/bioscope-special",
-  },
-  {
-    id: 6,
-    title: "Featured Entertainment",
-    desktopImage:
-      "https://img.rockstreamer.com/1280xauto/images/cppbTH0u5sp9WMN1DqAC.jpg?w=1080&q=75",
-    mobileImage:
-      "https://img.rockstreamer.com/220xauto/images/rX7AXzT1h2Ye0gW5we4A.jpg?w=256&q=75",
-    duration: "2h 10m",
-    year: "2026",
-    rating: "G",
-    exclusive: false,
-    path: "/watch/featured-entertainment",
-  },
-  {
-    id: 7,
-    title: "Jaffna Kings vs Colombo Kaps",
-    desktopImage:
-      "https://asset.bioscopelive.com/uploads/images/2026/07/22/thumbnails_ea636a515b6acc0eb5a2544202bdd44d_goplay_jaffna_vs_colombo_3_30pm_22july_l.jpg",
-    mobileImage:
-      "https://asset.bioscopelive.com/uploads/images/2026/07/22/posters_dac16f6e0cfcae37254e8d9a19a79778_goplay_jaffna_vs_colombo_3_30pm_22july_p.jpg?w=256&q=75",
-    duration: "60s",
-    year: "2026",
-    rating: "G",
-    exclusive: true,
-    path: "/watch/jaffna-vs-colombo",
-  },
-];
 
 const Slider = () => {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -116,20 +23,25 @@ const Slider = () => {
   }
 
   const promoted = settings?.promotedVideos?.slider;
-  const displayedItems =
-    promoted?.length > 0
-      ? promoted.map((video) => ({
-          id: video.id,
-          title: video.title,
-          desktopImage: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
-          mobileImage: `${api.defaults.baseURL}${video.thumbnail?.portrait}`,
-          duration: video.duration,
-          year: "",
-          rating: video.maturityRating,
-          exclusive: false,
-          path: `/watch/${video.id}`,
-        }))
-      : sliderItems;
+  const displayedItems = (promoted || []).map((video) => ({
+    id: video.id,
+    title: video.title,
+    desktopImage: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
+    mobileImage: `${api.defaults.baseURL}${video.thumbnail?.portrait}`,
+    duration: video.duration,
+    year: "",
+    rating: video.maturityRating,
+    exclusive: false,
+    path: `/watch/${video.id}`,
+  }));
+
+  if (displayedItems.length === 0) {
+    return (
+      <section className="w-full bg-[#111618] px-4 py-[10px] sm:px-6 lg:px-10 lg:py-[11px]">
+        <EmptySection message="No slider content added yet. Please add it from the admin panel." />
+      </section>
+    );
+  }
 
   const handlePlay = (item) => {
     navigate(item.path);

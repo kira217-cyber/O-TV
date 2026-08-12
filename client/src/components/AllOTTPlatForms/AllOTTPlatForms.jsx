@@ -15,132 +15,9 @@ import { alignHoverPreview } from "../../utils/alignHoverPreview";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
 import { api } from "../../api/axios";
 import RowSkeleton from "../Skeletons/RowSkeleton";
+import EmptySection from "../EmptySection/EmptySection";
 
 import "swiper/css";
-
-const ottPlatforms = [
-  {
-    id: "chorki",
-    name: "Chorki",
-    logo: "https://asset.bioscopelive.com/uploads/images/2025/07/29/posters_bc41826f91f3d339c461f6f8f402647a_goplay_chorki.png",
-  },
-  {
-    id: "sonyliv",
-    name: "SonyLiv",
-    logo: "https://asset.bioscopelive.com/uploads/images/2025/07/29/posters_bc5c7e6d1b48fbc2199ba3974e64579b_goplay_sonyliv.png",
-  },
-  {
-    id: "hoichoi",
-    name: "Hoichoi",
-    logo: "https://asset.bioscopelive.com/uploads/images/2025/10/13/images_83382f6f8877fdde9e2fc1bb334c101a_goplay_hoichoi_full_log_protrait_1.png",
-  },
-  {
-    id: "lionsgate",
-    name: "Lionsgate Play",
-    logo: "https://asset.bioscopelive.com/uploads/images/2025/07/29/posters_0a16a10446068211cd28bc00e1b89091_goplay_lgp.png",
-  },
-  {
-    id: "iscreen",
-    name: "iScreen",
-    logo: "https://asset.bioscopelive.com/uploads/images/2025/07/29/posters_00e3cca08fd16dd4befed1291273d784_goplay_iscreen.png",
-  },
-  {
-    id: "deeptoplay",
-    name: "Deepto Play",
-    logo: "https://asset.bioscopelive.com/uploads/images/2025/07/29/posters_8a90c293da3963b7943de8052b6b49b9_goplay_deeptp.png",
-  },
-  {
-    id: "epicon",
-    name: "EpicOn",
-    logo: "https://asset.bioscopelive.com/uploads/images/2025/07/29/posters_49f597b8762d6b3ec19335b4ae07b7aa_goplay_epicon.png",
-  },
-  {
-    id: "shemaroome",
-    name: "ShemarooMe",
-    logo: "https://asset.bioscopelive.com/uploads/images/2025/07/29/posters_6d6a562194ff3a1836d92be180d27e70_goplay_shemaroome.png",
-  },
-  {
-    id: "docubay",
-    name: "Docubay",
-    logo: "https://asset.bioscopelive.com/uploads/images/2025/07/29/posters_302549f0add82c9b5d14fe94deff2e21_goplay_docubay.png",
-  },
-];
-
-const cardImages = [
-  "https://image.chorkicdn.com/uploads/images/2026/03/21/thumbnails_52d888c56dd9e038d430272d11d3d672_goplay_63419.jpg?w=1080",
-
-  "https://image.chorkicdn.com/uploads/images/2026/07/22/thumbnails_cc7e02d3bc75b951a06c580928c36176_goplay_1200x675jpg.jpeg?w=480",
-
-  "https://image.chorkicdn.com/uploads/images/2026/05/20/thumbnails_9a17986cf1a558e41096ed09c653767d_goplay_1200x675.jpg?w=480&q=75",
-
-  "https://dbcmsassets.docubay.com/featured-images/1784019663-love-after-60-in-india-1024x576-xoriginal.jpg",
-];
-
-const movieDetails = [
-  {
-    title: "Rockstar",
-    category: "Music",
-    badge: "Exclusive",
-    description:
-      "Experience an unforgettable musical journey, streaming exclusively now.",
-  },
-  {
-    title: "Lifeline",
-    category: "Drama",
-    badge: "Exclusive",
-    description:
-      "A powerful story of hope, relationships and the strength to survive.",
-  },
-  {
-    title: "The Journey",
-    category: "Movie",
-    badge: "",
-    description:
-      "Watch a remarkable journey filled with love, courage and emotion.",
-  },
-  {
-    title: "Love After 60",
-    category: "Documentary",
-    badge: "Exclusive",
-    description:
-      "A touching documentary exploring companionship and love after sixty.",
-  },
-  {
-    title: "Rockstar Special",
-    category: "Music",
-    badge: "New Release",
-    description: "The special edition of Rockstar is now available to stream.",
-  },
-  {
-    title: "Lifeline Special",
-    category: "Series",
-    badge: "Exclusive",
-    description:
-      "Discover more from Lifeline in this exclusive special presentation.",
-  },
-  {
-    title: "The Journey Special",
-    category: "Drama",
-    badge: "New Release",
-    description:
-      "A new chapter of an inspiring and emotionally powerful journey.",
-  },
-  {
-    title: "Love After 60 Special",
-    category: "Documentary",
-    badge: "",
-    description:
-      "Discover more inspiring stories about love, life and companionship.",
-  },
-];
-
-const allMovies = movieDetails.map((movie, index) => ({
-  ...movie,
-  id: index + 1,
-  image: cardImages[index % cardImages.length],
-  hoverImage: cardImages[index % cardImages.length],
-  path: `/watch/ott-movie-${index + 1}`,
-}));
 
 const AllOTTPlatForms = () => {
   const swiperRef = useRef(null);
@@ -149,22 +26,17 @@ const AllOTTPlatForms = () => {
   const { settings, loading: settingsLoading } = useSiteSettings();
   const sectionTitle = settings?.homeSections?.allOtt?.title || "All OTT Platforms";
 
-  const realChannels = useMemo(
-    () => (settings?.channels || []).filter((channel) => channel.logo),
+  const platformList = useMemo(
+    () =>
+      (settings?.channels || [])
+        .filter((channel) => channel.logo)
+        .map((channel) => ({
+          id: channel.id,
+          name: channel.name,
+          logo: `${api.defaults.baseURL}${channel.logo}`,
+        })),
     [settings],
   );
-  const usingRealChannels = realChannels.length > 0;
-
-  const platformList = useMemo(() => {
-    if (usingRealChannels) {
-      return realChannels.map((channel) => ({
-        id: channel.id,
-        name: channel.name,
-        logo: `${api.defaults.baseURL}${channel.logo}`,
-      }));
-    }
-    return ottPlatforms;
-  }, [usingRealChannels, realChannels]);
 
   const [selectedPlatformId, setSelectedPlatformId] = useState(null);
   const [channelVideos, setChannelVideos] = useState({});
@@ -178,7 +50,7 @@ const AllOTTPlatForms = () => {
       : platformList[0]?.id;
 
   useEffect(() => {
-    if (!usingRealChannels || !activePlatform) return;
+    if (!activePlatform) return;
     if (channelVideos[activePlatform]) return;
 
     let cancelled = false;
@@ -204,45 +76,43 @@ const AllOTTPlatForms = () => {
     return () => {
       cancelled = true;
     };
-  }, [activePlatform, usingRealChannels, channelVideos]);
+  }, [activePlatform, channelVideos]);
 
   const selectedPlatform =
     platformList.find((platform) => platform.id === activePlatform) ||
     platformList[0];
 
   const displayedMovies = useMemo(() => {
-    if (usingRealChannels) {
-      const videos = channelVideos[activePlatform] || [];
+    const videos = channelVideos[activePlatform] || [];
 
-      return videos.map((video) => ({
-        id: video._id,
-        title: video.title,
-        category: video.category,
-        badge: "",
-        description: selectedPlatform?.name || "",
-        image: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
-        hoverImage: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
-        path: `/watch/${video._id}`,
-        displayId: `real-${video._id}`,
-      }));
-    }
-
-    const platformIndex = ottPlatforms.findIndex(
-      (platform) => platform.id === activePlatform,
-    );
-
-    const moveBy = platformIndex % allMovies.length;
-
-    return [...allMovies.slice(moveBy), ...allMovies.slice(0, moveBy)].map(
-      (movie, index) => ({
-        ...movie,
-        displayId: `${activePlatform}-${movie.id}-${index}`,
-      }),
-    );
-  }, [activePlatform, usingRealChannels, channelVideos, selectedPlatform]);
+    return videos.map((video) => ({
+      id: video._id,
+      title: video.title,
+      category: video.category,
+      badge: "",
+      description: selectedPlatform?.name || "",
+      image: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
+      hoverImage: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
+      path: `/watch/${video._id}`,
+      displayId: `real-${video._id}`,
+    }));
+  }, [activePlatform, channelVideos, selectedPlatform]);
 
   if (settingsLoading) {
     return <RowSkeleton cardWidth={280} cardHeight={158} />;
+  }
+
+  if (platformList.length === 0) {
+    return (
+      <section className="w-full overflow-hidden bg-[#111618] py-6 text-white sm:py-8 lg:py-9">
+        <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 lg:px-10 xl:px-[42px]">
+          <h2 className="mb-4 text-[22px] font-semibold tracking-[-0.4px] text-white sm:text-[26px] lg:text-[30px]">
+            {sectionTitle}
+          </h2>
+          <EmptySection />
+        </div>
+      </section>
+    );
   }
 
   const updateNavigation = (swiper) => {
@@ -351,6 +221,12 @@ const AllOTTPlatForms = () => {
 
         {/* Fixed-width slider boundary */}
         <div className="ott-slider-boundary relative z-20 mt-3 sm:mt-4">
+          {displayedMovies.length === 0 ? (
+            <EmptySection
+              message={`No videos added yet for ${selectedPlatform?.name || "this channel"}. Please add it from the admin panel.`}
+            />
+          ) : (
+          <>
           <Swiper
             key={activePlatform}
             modules={[Keyboard, A11y]}
@@ -565,16 +441,14 @@ const AllOTTPlatForms = () => {
               <ChevronRight size={28} strokeWidth={1.7} />
             </button>
           )}
+          </>
+          )}
         </div>
 
         {/* Browse platform button */}
         <div className="mt-2 sm:mt-3">
           <NavLink
-            to={
-              usingRealChannels
-                ? `/channel/${selectedPlatform.id}`
-                : `/ott/${selectedPlatform.id}`
-            }
+            to={`/channel/${selectedPlatform.id}`}
             className="group/browse inline-flex h-[43px] cursor-pointer items-center gap-3 rounded-[9px] bg-[#242b2d] px-4 text-[14px] font-semibold text-white transition-all duration-200 hover:bg-[#30383a] active:scale-[0.98] sm:h-[48px] sm:text-[16px]"
           >
             <span>Browse {selectedPlatform.name}</span>

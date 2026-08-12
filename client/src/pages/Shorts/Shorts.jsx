@@ -1,9 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { Play, RotateCcw, RotateCw, Volume2, VolumeX } from "lucide-react";
 import Skeleton from "react-loading-skeleton";
 
 import { api } from "../../api/axios";
+import AdOverlay from "../../components/AdOverlay/AdOverlay";
+import { useAdCampaigns } from "../../hooks/useAdCampaigns";
 
 const formatTime = (seconds) => {
   if (!Number.isFinite(seconds)) return "0:00";
@@ -18,10 +20,25 @@ const formatTime = (seconds) => {
 const ShortItem = ({ video, base }) => {
   const containerRef = useRef(null);
   const videoRef = useRef(null);
+  const adOverlayRef = useRef(null);
   const [muted, setMuted] = useState(true);
   const [playing, setPlaying] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isNearViewport, setIsNearViewport] = useState(false);
+
+  // Only fetch ad campaigns once this short has actually scrolled into
+  // view — avoids firing 30 requests at once for the whole feed on mount.
+  const { campaigns } = useAdCampaigns(isNearViewport ? { video: video.id } : {});
+  // Memoized so this array's identity only changes when the underlying
+  // campaigns actually change — AdOverlay's scheduling effect depends on
+  // it, and ShortItem re-renders very often (onTimeUpdate); a fresh array
+  // on every render would keep resetting the "first ad" timer forever.
+  const videoOnlyCampaigns = useMemo(
+    () => campaigns.filter((campaign) => campaign.type === "video"),
+    [campaigns],
+  );
 
   useEffect(() => {
     const el = containerRef.current;
@@ -32,8 +49,11 @@ const ShortItem = ({ video, base }) => {
       ([entry]) => {
         if (entry.isIntersecting) {
           videoEl.play().catch(() => {});
+          adOverlayRef.current?.resume();
+          setIsNearViewport(true);
         } else {
           videoEl.pause();
+          adOverlayRef.current?.pause();
         }
       },
       { threshold: 0.6 },
@@ -93,10 +113,21 @@ const ShortItem = ({ video, base }) => {
         loop
         playsInline
         onClick={togglePlay}
-        onPlay={() => setPlaying(true)}
+        onPlay={() => {
+          setPlaying(true);
+          setHasStarted(true);
+        }}
         onPause={() => setPlaying(false)}
         onTimeUpdate={(event) => setCurrent(event.currentTarget.currentTime)}
         onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)}
+      />
+
+      <AdOverlay
+        ref={adOverlayRef}
+        videoRef={videoRef}
+        mode="pause"
+        campaigns={videoOnlyCampaigns}
+        playbackStarted={hasStarted}
       />
 
       {!playing && (

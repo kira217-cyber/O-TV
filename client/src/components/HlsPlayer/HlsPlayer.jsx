@@ -9,27 +9,44 @@ import {
   VolumeX,
 } from "lucide-react";
 
-const HlsPlayer = ({ src, poster, title }) => {
+import AdOverlay from "../AdOverlay/AdOverlay";
+import { useAdCampaigns } from "../../hooks/useAdCampaigns";
+
+const HlsPlayer = ({ src, poster, title, adsTarget }) => {
   const containerRef = useRef(null);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const hideTimer = useRef(null);
 
-  const [started, setStarted] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [buffering, setBuffering] = useState(true);
   const [muted, setMuted] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    if (!started) return;
+  const { campaigns } = useAdCampaigns(adsTarget);
 
+  // Attaches and autoplays as soon as the channel is opened — falls back to
+  // muted playback if the browser blocks autoplay-with-sound.
+  useEffect(() => {
     const video = videoRef.current;
-    if (!video || !src) return;
+    if (!video || !src) return undefined;
 
     const attach = () => {
       setError(false);
+      setBuffering(true);
+
+      const tryPlay = async () => {
+        try {
+          await video.play();
+        } catch {
+          video.muted = true;
+          setMuted(true);
+          video.play().catch(() => {});
+        }
+      };
 
       if (Hls.isSupported()) {
         const hls = new Hls();
@@ -40,13 +57,11 @@ const HlsPlayer = ({ src, poster, title }) => {
           if (data?.fatal) setError(true);
         });
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          video.play().catch(() => {});
+          tryPlay();
         });
       } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
         video.src = src;
-        video.addEventListener("loadedmetadata", () => {
-          video.play().catch(() => {});
-        });
+        video.addEventListener("loadedmetadata", tryPlay);
         video.addEventListener("error", () => setError(true));
       } else {
         setError(true);
@@ -59,14 +74,9 @@ const HlsPlayer = ({ src, poster, title }) => {
       hlsRef.current?.destroy();
       hlsRef.current = null;
     };
-  }, [started, src]);
+  }, [src]);
 
   const togglePlay = () => {
-    if (!started) {
-      setStarted(true);
-      return;
-    }
-
     const video = videoRef.current;
     if (!video) return;
 
@@ -100,6 +110,17 @@ const HlsPlayer = ({ src, poster, title }) => {
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, []);
 
+  // AdOverlay mutes/unmutes this element directly during a video ad — pick
+  // that up here instead of new prop plumbing back out of AdOverlay.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return undefined;
+
+    const onVolumeChange = () => setMuted(video.muted);
+    video.addEventListener("volumechange", onVolumeChange);
+    return () => video.removeEventListener("volumechange", onVolumeChange);
+  }, []);
+
   const resetHideTimer = (stillPlaying = playing) => {
     setShowControls(true);
     clearTimeout(hideTimer.current);
@@ -114,34 +135,34 @@ const HlsPlayer = ({ src, poster, title }) => {
     <div
       ref={containerRef}
       onMouseMove={() => resetHideTimer()}
-      className="group relative aspect-video w-full overflow-hidden rounded-[28px] border border-[#16d6dc]/20 bg-black shadow-2xl shadow-black/40"
+      className="group relative aspect-video w-full overflow-hidden rounded-sm border border-[#16d6dc]/20 bg-black shadow-2xl shadow-black/40 sm:rounded-2xl"
     >
-      {started ? (
-        <video
-          ref={videoRef}
-          poster={poster}
-          className="h-full w-full cursor-pointer bg-black object-contain"
-          onClick={togglePlay}
-          playsInline
-          onPlay={() => {
-            setPlaying(true);
-            resetHideTimer(true);
-          }}
-          onPause={() => {
-            setPlaying(false);
-            setShowControls(true);
-          }}
-        />
-      ) : (
-        poster && (
-          <img
-            src={poster}
-            alt={title}
-            className="h-full w-full object-cover"
-            draggable={false}
-          />
-        )
-      )}
+      <video
+        ref={videoRef}
+        poster={poster}
+        className="h-full w-full cursor-pointer bg-black object-contain"
+        onClick={togglePlay}
+        playsInline
+        onPlay={() => {
+          setPlaying(true);
+          setHasStarted(true);
+          resetHideTimer(true);
+        }}
+        onPause={() => {
+          setPlaying(false);
+          setShowControls(true);
+        }}
+        onWaiting={() => setBuffering(true)}
+        onCanPlay={() => setBuffering(false)}
+        onPlaying={() => setBuffering(false)}
+      />
+
+      <AdOverlay
+        videoRef={videoRef}
+        mode="mute"
+        campaigns={campaigns}
+        playbackStarted={hasStarted}
+      />
 
       {error && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/70 px-6 text-center">
@@ -151,7 +172,13 @@ const HlsPlayer = ({ src, poster, title }) => {
         </div>
       )}
 
-      {!error && (!started || !playing) && (
+      {!error && buffering && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-[#16d6dc]" />
+        </div>
+      )}
+
+      {!error && !buffering && !playing && (
         <button
           type="button"
           onClick={togglePlay}
@@ -174,7 +201,7 @@ const HlsPlayer = ({ src, poster, title }) => {
         </div>
       )}
 
-      {started && !error && (
+      {!error && (
         <div
           className={`absolute inset-x-0 bottom-0 flex items-center justify-between gap-3 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-4 pb-3 pt-8 transition-opacity duration-300 ${
             showControls || !playing ? "opacity-100" : "opacity-0"

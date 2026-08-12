@@ -47,6 +47,7 @@ const WatchVideo = () => {
           src={video.video?.url}
           poster={`${base}${video.thumbnail?.landscape}`}
           title={video.title}
+          adsTarget={{ video: id }}
         />
       </div>
 

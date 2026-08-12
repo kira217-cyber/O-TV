@@ -15,6 +15,7 @@ import Videos from "../pages/Videos/Videos";
 import VideoDetails from "../pages/VideoDetails/VideoDetails";
 import UploadVideo from "../pages/UploadVideo/UploadVideo";
 import PromotionRequests from "../pages/PromotionRequests/PromotionRequests";
+import AdCampaigns from "../pages/AdCampaigns/AdCampaigns";
 
 import DepositMethods from "../pages/DepositMethods/DepositMethods";
 import DepositRequests from "../pages/DepositRequests/DepositRequests";
@@ -98,6 +99,10 @@ export const routes = createBrowserRouter([
       {
         path: "promotion-requests",
         element: wrap("promotion-requests", PromotionRequests),
+      },
+      {
+        path: "ad-campaigns",
+        element: wrap("ad-campaigns", AdCampaigns),
       },
 
       {

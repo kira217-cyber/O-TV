@@ -48,6 +48,7 @@ const LiveTvWatch = () => {
           src={channel.streamUrl}
           poster={channel.logo ? `${base}${channel.logo}` : undefined}
           title={channel.name}
+          adsTarget={{ liveTv: channel._id }}
         />
       </div>
 

@@ -10,6 +10,9 @@ import {
   RotateCw,
 } from "lucide-react";
 
+import AdOverlay from "../AdOverlay/AdOverlay";
+import { useAdCampaigns } from "../../hooks/useAdCampaigns";
+
 const formatTime = (seconds) => {
   if (!Number.isFinite(seconds)) return "0:00";
 
@@ -21,18 +24,42 @@ const formatTime = (seconds) => {
   return h > 0 ? `${h}:${m.toString().padStart(2, "0")}:${s}` : `${m}:${s}`;
 };
 
-const VideoPlayer = ({ src, poster, title }) => {
+const VideoPlayer = ({ src, poster, title, adsTarget }) => {
   const containerRef = useRef(null);
   const videoRef = useRef(null);
   const hideTimer = useRef(null);
 
   const [playing, setPlaying] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [buffering, setBuffering] = useState(true);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(1);
   const [fullscreen, setFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
+
+  const { campaigns } = useAdCampaigns(adsTarget);
+
+  // Autoplay as soon as a video is opened — most browsers block autoplay
+  // with sound without prior interaction, so fall back to muted playback
+  // rather than leaving the player stalled on a blocked play() promise.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const tryPlay = async () => {
+      try {
+        await video.play();
+      } catch {
+        video.muted = true;
+        setMuted(true);
+        video.play().catch(() => {});
+      }
+    };
+
+    tryPlay();
+  }, [src]);
 
   const togglePlay = () => {
     const video = videoRef.current;
@@ -104,7 +131,7 @@ const VideoPlayer = ({ src, poster, title }) => {
     <div
       ref={containerRef}
       onMouseMove={() => resetHideTimer()}
-      className="group relative aspect-video w-full overflow-hidden rounded-[28px] border border-[#16d6dc]/20 bg-black shadow-2xl shadow-black/40"
+      className="group relative aspect-video w-full overflow-hidden rounded-sm border border-[#16d6dc]/20 bg-black shadow-2xl shadow-black/40 sm:rounded-2xl"
     >
       <video
         ref={videoRef}
@@ -114,6 +141,7 @@ const VideoPlayer = ({ src, poster, title }) => {
         onClick={togglePlay}
         onPlay={() => {
           setPlaying(true);
+          setHasStarted(true);
           resetHideTimer(true);
         }}
         onPause={() => {
@@ -124,11 +152,27 @@ const VideoPlayer = ({ src, poster, title }) => {
           setPlaying(false);
           setShowControls(true);
         }}
+        onWaiting={() => setBuffering(true)}
+        onCanPlay={() => setBuffering(false)}
+        onPlaying={() => setBuffering(false)}
         onTimeUpdate={(e) => setCurrent(e.currentTarget.currentTime)}
         onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
       />
 
-      {!playing && (
+      <AdOverlay
+        videoRef={videoRef}
+        mode="pause"
+        campaigns={campaigns}
+        playbackStarted={hasStarted}
+      />
+
+      {buffering && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/20 border-t-[#16d6dc]" />
+        </div>
+      )}
+
+      {!playing && !buffering && (
         <button
           type="button"
           onClick={togglePlay}

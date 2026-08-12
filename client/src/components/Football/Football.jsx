@@ -8,127 +8,10 @@ import { alignHoverPreview } from "../../utils/alignHoverPreview";
 import { api } from "../../api/axios";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
 import RowSkeleton from "../Skeletons/RowSkeleton";
+import EmptySection from "../EmptySection/EmptySection";
 
 import "swiper/css";
 import "swiper/css/free-mode";
-
-const DEFAULT_DESKTOP_BACKGROUND =
-  "https://asset.bioscopelive.com/uploads/images/2026/07/21/thumbnail_backgrounds_1bc44929b7ec290e1187d9be8a6bf8af_goplay_upcoming_web.png?w=1920&q=75";
-
-const DEFAULT_MOBILE_BACKGROUND =
-  "https://asset.bioscopelive.com/uploads/images/2026/07/21/poster_backgrounds_0e87771687f96ed877d7af0ecca769fc_goplay_fifa_phone.png?w=1920&q=75";
-
-/*
- * Normal card-এর portrait images।
- * ৪টি image পুনরায় ব্যবহার করে ১৪টি card হবে।
- */
-const cardImages = [
-  "https://asset.bioscopelive.com/uploads/images/2026/07/07/posters_f25c7cbbab0a92eb5c47b307cf0bbea2_goplay_por_vs_esp_16_p.png?w=640&q=75",
-
-  "https://asset.bioscopelive.com/uploads/images/2026/07/08/posters_f66e4ffccd366054fad3b6c222b3c41e_goplay_arg_vs_egy_16_p.png?w=640&q=75",
-
-  "https://asset.bioscopelive.com/uploads/images/2026/07/10/posters_2e938f393f9777722deab3afd201d9bb_goplay_fra_vs_mar_qrt_p.png?w=640&q=75",
-
-  "https://asset.bioscopelive.com/uploads/images/2026/07/07/posters_4dda1d8fe6eec41f01ed6f2536498554_goplay_bra_vs_nor_replay_p.png?w=640&q=75",
-];
-
-/*
- * Desktop hover preview-এর landscape images।
- */
-const hoverImages = [
-  "https://asset.bioscopelive.com/uploads/images/2026/07/22/thumbnails_cfb121ea1074ee7d98649ef558656463_goplay_esp_vs_arg_l.png?w=480&q=75",
-
-  "https://asset.bioscopelive.com/uploads/images/2026/07/16/thumbnails_60579b46cad485959f72d15d5ef451a0_goplay_arg_vs_egy_l.png?w=480&q=75",
-
-  "https://asset.bioscopelive.com/uploads/images/2026/07/07/thumbnails_ff1cd0e6bbd5f2f944f8698989f865b4_goplay_bra_vs_nor_replay_l.png?w=480&q=75",
-
-  "https://asset.bioscopelive.com/uploads/images/2026/07/19/thumbnails_85eebc56d68da5b2f07d8c7a049615b0_goplay_esp_vs_bel_l.png?w=480&q=75",
-
-  "https://asset.bioscopelive.com/uploads/images/2026/07/16/thumbnails_f4ef2cbaaf1579873f27256d6db6492d_goplay_fra_vs_esp_l.png?w=480&q=75",
-
-  "https://asset.bioscopelive.com/uploads/images/2026/07/19/thumbnails_e85556a330842786281959972df7fea2_goplay_por_vs_esp_l.png?w=480&q=75",
-
-  "https://asset.bioscopelive.com/uploads/images/2026/07/19/thumbnails_7c4c09bbec4781622f2c8ce16dc09be8_goplay_por_vs_cro_l.png?w=480&q=75",
-];
-
-const footballDetails = [
-  {
-    title: "Portugal vs Spain",
-    shortTitle: "POR vs ESP",
-    round: "Round of 16",
-    category: "FIFA Replay",
-    description:
-      "Watch Portugal face Spain in this thrilling FIFA World Cup replay.",
-  },
-  {
-    title: "Argentina vs Egypt",
-    shortTitle: "ARG vs EGY",
-    round: "Round of 16",
-    category: "FIFA Replay",
-    description:
-      "Relive Argentina against Egypt in this FIFA World Cup classic.",
-  },
-  {
-    title: "France vs Morocco",
-    shortTitle: "FRA vs MAR",
-    round: "Quarter Finals",
-    category: "FIFA Replay",
-    description:
-      "Watch France face Morocco in an exciting World Cup quarter-final.",
-  },
-  {
-    title: "Brazil vs Norway",
-    shortTitle: "BRA vs NOR",
-    round: "Round of 16",
-    category: "FIFA Replay",
-    description:
-      "Watch Brazil face Norway in an unforgettable World Cup encounter.",
-  },
-  {
-    title: "Spain vs Belgium",
-    shortTitle: "ESP vs BEL",
-    round: "Quarter Finals",
-    category: "FIFA Replay",
-    description: "Spain and Belgium meet in this exciting World Cup replay.",
-  },
-  {
-    title: "France vs Spain",
-    shortTitle: "FRA vs ESP",
-    round: "Semi Finals",
-    category: "FIFA Replay",
-    description:
-      "Relive the FIFA World Cup semi-final between France and Spain.",
-  },
-  {
-    title: "Portugal vs Croatia",
-    shortTitle: "POR vs CRO",
-    round: "Round of 32",
-    category: "FIFA Replay",
-    description:
-      "Watch Portugal face Croatia in this memorable World Cup contest.",
-  },
-];
-
-const firstSevenItems = footballDetails.map((item, index) => ({
-  ...item,
-  id: index + 1,
-  image: cardImages[index % cardImages.length],
-  hoverImage: hoverImages[index],
-  path: `/football/replay-${index + 1}`,
-}));
-
-const secondSevenItems = footballDetails.map((item, index) => ({
-  ...item,
-  id: index + 8,
-  title: `${item.title} Highlights`,
-  category: "FIFA Highlights",
-  description: `Watch the best moments from ${item.title} in this FIFA World Cup highlights presentation.`,
-  image: cardImages[index % cardImages.length],
-  hoverImage: hoverImages[index],
-  path: `/football/replay-${index + 8}`,
-}));
-
-const footballItems = [...firstSevenItems, ...secondSevenItems];
 
 const Football = () => {
   const swiperRef = useRef(null);
@@ -139,33 +22,43 @@ const Football = () => {
   const sectionTitle = section?.title || "FIFA Rewind";
   const desktopBackground = section?.backgroundDesktop
     ? `${api.defaults.baseURL}${section.backgroundDesktop}`
-    : DEFAULT_DESKTOP_BACKGROUND;
+    : null;
   const mobileBackground = section?.backgroundMobile
     ? `${api.defaults.baseURL}${section.backgroundMobile}`
-    : DEFAULT_MOBILE_BACKGROUND;
+    : null;
 
   const promoted = settings?.promotedVideos?.football;
-  const displayedItems =
-    promoted?.length > 0
-      ? promoted.map((video) => ({
-          id: video.id,
-          title: video.title,
-          shortTitle: video.title,
-          round: video.channelName,
-          category: video.category,
-          description: video.description || video.channelName,
-          image: `${api.defaults.baseURL}${video.thumbnail?.portrait}`,
-          hoverImage: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
-          path: `/watch/${video.id}`,
-          isReal: true,
-        }))
-      : footballItems;
+  const displayedItems = (promoted || []).map((video) => ({
+    id: video.id,
+    title: video.title,
+    shortTitle: video.title,
+    round: video.channelName,
+    category: video.category,
+    description: video.description || video.channelName,
+    image: `${api.defaults.baseURL}${video.thumbnail?.portrait}`,
+    hoverImage: `${api.defaults.baseURL}${video.thumbnail?.landscape}`,
+    path: `/watch/${video.id}`,
+    isReal: true,
+  }));
 
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
   if (settingsLoading) {
     return <RowSkeleton cardWidth={180} cardHeight={280} />;
+  }
+
+  if (displayedItems.length === 0) {
+    return (
+      <section className="w-full overflow-hidden bg-[#111618] py-4 text-white sm:py-7 lg:py-9">
+        <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 lg:px-10 xl:px-[42px]">
+          <h2 className="mb-4 text-[19px] font-semibold tracking-[-0.4px] text-white sm:text-[25px] lg:text-[30px]">
+            {sectionTitle}
+          </h2>
+          <EmptySection />
+        </div>
+      </section>
+    );
   }
 
   const updateNavigation = (swiper) => {
@@ -228,10 +121,10 @@ const Football = () => {
     <section className="w-full overflow-x-clip overflow-y-visible bg-[#111618] py-4 text-white sm:py-7 lg:py-9">
       {/* Background container */}
       <div
-        className="football-background group/football relative mx-auto w-full max-w-[1920px] overflow-x-clip overflow-y-visible rounded-[14px] bg-center bg-no-repeat sm:rounded-[25px] lg:min-h-[625px] lg:rounded-[52px]"
+        className="football-background group/football relative mx-auto w-full max-w-[1920px] overflow-x-clip overflow-y-visible rounded-[14px] bg-[#111618] bg-center bg-no-repeat sm:rounded-[25px] lg:min-h-[625px] lg:rounded-[52px]"
         style={{
-          "--football-mobile-bg": `url("${mobileBackground}")`,
-          "--football-desktop-bg": `url("${desktopBackground}")`,
+          "--football-mobile-bg": mobileBackground ? `url("${mobileBackground}")` : "none",
+          "--football-desktop-bg": desktopBackground ? `url("${desktopBackground}")` : "none",
         }}
       >
         {/* Mobile readability overlay */}

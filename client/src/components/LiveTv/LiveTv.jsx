@@ -7,107 +7,9 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
 import { api } from "../../api/axios";
 import CircleRowSkeleton from "../Skeletons/CircleRowSkeleton";
+import EmptySection from "../EmptySection/EmptySection";
 
 import "swiper/css";
-
-const liveTvChannels = [
-  {
-    id: 1,
-    name: "Deepto TV",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2026/05/05/thumbnails_53d5a9f2d17d89002d2154f39251d374_goplay_deppto_land.png?w=320&q=75",
-    path: "/live-tv/deepto-tv",
-    exclusive: true,
-  },
-  {
-    id: 2,
-    name: "Al Jazeera",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/08/04/thumbnails_ae0d22fd52cb94c62c870f10591fbab8_goplay_al_jazeera_logo.jpg?w=320&q=75",
-    path: "/live-tv/al-jazeera",
-    exclusive: true,
-  },
-  {
-    id: 3,
-    name: "DW",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/07/22/thumbnails_e5bcce2b56ccc7a17ca497bb76b3b99b_goplay_dw_landscape.jpg?w=320&q=75",
-    path: "/live-tv/dw",
-    exclusive: true,
-  },
-  {
-    id: 4,
-    name: "SRK TV",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/08/11/thumbnails_58ebcef1efcc65837557de15952d2643_goplay_srk_tv_landscape.jpg?w=320&q=75",
-    path: "/live-tv/srk-tv",
-    exclusive: true,
-  },
-  {
-    id: 5,
-    name: "CNBC",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/07/22/thumbnails_e056ee2fae844cd280039875a78673b3_goplay_cnbc.jpg?w=320&q=75",
-    path: "/live-tv/cnbc",
-    exclusive: true,
-  },
-  {
-    id: 6,
-    name: "NDTV",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/08/04/thumbnails_117c10db52e38d713603c89b68958401_goplay_nd_tv_logo.jpg?w=320&q=75",
-    path: "/live-tv/ndtv",
-    exclusive: true,
-  },
-  {
-    id: 7,
-    name: "Akash Aath",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/07/22/thumbnails_bf221f76c330935c1da018c4d98232ea_goplay_akaash_atth_landscape.jpg?w=320&q=75",
-    path: "/live-tv/akash-aath",
-    exclusive: true,
-  },
-  {
-    id: 8,
-    name: "Dangal TV",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/07/22/thumbnails_f1120ea0678783ed60ac2a31e01787f9_goplay_dangal_tv_landscape.jpg?w=320&q=75",
-    path: "/live-tv/dangal-tv",
-    exclusive: true,
-  },
-  {
-    id: 9,
-    name: "Hum Sitaray",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/07/22/thumbnails_24221f32c423648fde64f213029e492c_goplay_hum_sitare_landscape.jpg?w=320&q=75",
-    path: "/live-tv/hum-sitaray",
-    exclusive: true,
-  },
-  {
-    id: 10,
-    name: "Express Entertainment",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/07/22/thumbnails_f3fdd8012da9d6b1bd9cd3f3f895333b_goplay_express_entertainment.jpg?w=320&q=75",
-    path: "/live-tv/express-entertainment",
-    exclusive: true,
-  },
-  {
-    id: 11,
-    name: "Rongeen TV",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/07/22/thumbnails_40a39ce477239a3581186abb1ca0a157_goplay_rongeen_tv_landscape.jpg?w=320&q=75",
-    path: "/live-tv/rongeen-tv",
-    exclusive: true,
-  },
-  {
-    id: 12,
-    name: "Channel i",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2026/02/18/thumbnails_560c067a16528300e31b78cccf25cba5_goplay_channel_i_logo_landscape.jpg?w=320&q=75",
-    path: "/live-tv/channel-i",
-    exclusive: true,
-  },
-];
 
 const LiveTv = () => {
   const swiperRef = useRef(null);
@@ -116,26 +18,36 @@ const LiveTv = () => {
   const sectionTitle = settings?.homeSections?.liveTv?.title || "Live TV";
 
   const realChannels = settings?.liveTv || [];
-  const displayedChannels = useMemo(() => {
-    if (realChannels.length > 0) {
-      return realChannels.map((channel) => ({
+  const displayedChannels = useMemo(
+    () =>
+      realChannels.map((channel) => ({
         id: channel._id,
         name: channel.name,
-        image: channel.logo
-          ? `${api.defaults.baseURL}${channel.logo}`
-          : "https://asset.bioscopelive.com/uploads/images/2026/05/05/thumbnails_53d5a9f2d17d89002d2154f39251d374_goplay_deppto_land.png?w=320&q=75",
+        image: channel.logo ? `${api.defaults.baseURL}${channel.logo}` : null,
         path: `/live-tv/${channel._id}`,
         exclusive: false,
-      }));
-    }
-    return liveTvChannels;
-  }, [realChannels]);
+      })),
+    [realChannels],
+  );
 
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
   if (settingsLoading) {
     return <CircleRowSkeleton />;
+  }
+
+  if (displayedChannels.length === 0) {
+    return (
+      <section className="w-full overflow-hidden bg-[#111618] py-5 text-white sm:py-7 lg:py-8">
+        <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 lg:px-10 xl:px-[42px]">
+          <h2 className="mb-4 text-[22px] font-semibold tracking-[-0.5px] text-white sm:text-[26px] lg:text-[30px]">
+            {sectionTitle}
+          </h2>
+          <EmptySection />
+        </div>
+      </section>
+    );
   }
 
   const updateNavigation = (swiper) => {
@@ -226,14 +138,20 @@ const LiveTv = () => {
                 >
                   {/* Circular channel card */}
                   <div className="relative aspect-square w-full rounded-full bg-white p-[5px] shadow-[0_8px_22px_rgba(0,0,0,0.2)]">
-                    <div className="h-full w-full overflow-hidden rounded-full bg-white">
-                      <img
-                        src={channel.image}
-                        alt={channel.name}
-                        draggable={false}
-                        loading={index < 8 ? "eager" : "lazy"}
-                        className="h-full w-full select-none rounded-full object-cover"
-                      />
+                    <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white">
+                      {channel.image ? (
+                        <img
+                          src={channel.image}
+                          alt={channel.name}
+                          draggable={false}
+                          loading={index < 8 ? "eager" : "lazy"}
+                          className="h-full w-full select-none rounded-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-lg font-black text-[#111618]">
+                          {channel.name?.[0]?.toUpperCase() || "?"}
+                        </span>
+                      )}
                     </div>
 
                     {/* Exclusive badge */}

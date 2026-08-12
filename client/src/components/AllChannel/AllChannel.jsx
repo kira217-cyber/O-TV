@@ -7,83 +7,9 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
 import { api } from "../../api/axios";
 import CircleRowSkeleton from "../Skeletons/CircleRowSkeleton";
+import EmptySection from "../EmptySection/EmptySection";
 
 import "swiper/css";
-
-const channels = [
-  {
-    id: 1,
-    name: "Chorki",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/07/29/posters_bc41826f91f3d339c461f6f8f402647a_goplay_chorki.png",
-    path: "/channel/chorki",
-    exclusive: true,
-  },
-  {
-    id: 2,
-    name: "SonyLiv",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/07/29/posters_bc5c7e6d1b48fbc2199ba3974e64579b_goplay_sonyliv.png",
-    path: "/channel/sonyliv",
-    exclusive: true,
-  },
-  {
-    id: 3,
-    name: "Lionsgate Play",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/07/29/posters_0a16a10446068211cd28bc00e1b89091_goplay_lgp.png",
-    path: "/channel/lionsgate-play",
-    exclusive: true,
-  },
-  {
-    id: 4,
-    name: "Hoichoi",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/10/13/images_83382f6f8877fdde9e2fc1bb334c101a_goplay_hoichoi_full_log_protrait_1.png",
-    path: "/channel/hoichoi",
-    exclusive: true,
-  },
-  {
-    id: 5,
-    name: "iScreen",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/07/29/posters_00e3cca08fd16dd4befed1291273d784_goplay_iscreen.png",
-    path: "/channel/iscreen",
-    exclusive: true,
-  },
-  {
-    id: 6,
-    name: "Deepto Play",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/07/29/posters_8a90c293da3963b7943de8052b6b49b9_goplay_deeptp.png",
-    path: "/channel/deepto-play",
-    exclusive: true,
-  },
-  {
-    id: 7,
-    name: "EpicOn",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/07/29/posters_49f597b8762d6b3ec19335b4ae07b7aa_goplay_epicon.png",
-    path: "/channel/epicon",
-    exclusive: true,
-  },
-  {
-    id: 8,
-    name: "ShemarooMe",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/07/29/posters_6d6a562194ff3a1836d92be180d27e70_goplay_shemaroome.png",
-    path: "/channel/shemaroome",
-    exclusive: true,
-  },
-  {
-    id: 9,
-    name: "Docubay",
-    image:
-      "https://asset.bioscopelive.com/uploads/images/2025/07/29/posters_302549f0add82c9b5d14fe94deff2e21_goplay_docubay.png",
-    path: "/channel/docubay",
-    exclusive: true,
-  },
-];
 
 const AllChannel = () => {
   const swiperRef = useRef(null);
@@ -92,23 +18,33 @@ const AllChannel = () => {
   const sectionTitle =
     settings?.homeSections?.allChannel?.title || "Unlimited Entertainment";
 
-  const featuredChannels = settings?.channels?.filter((channel) => channel.logo);
-  const displayedChannels =
-    featuredChannels?.length > 0
-      ? featuredChannels.map((channel) => ({
-          id: channel.id,
-          name: channel.name,
-          image: `${api.defaults.baseURL}${channel.logo}`,
-          path: `/channel/${channel.id}`,
-          exclusive: false,
-        }))
-      : channels;
+  const featuredChannels = settings?.channels?.filter((channel) => channel.logo) || [];
+  const displayedChannels = featuredChannels.map((channel) => ({
+    id: channel.id,
+    name: channel.name,
+    image: `${api.defaults.baseURL}${channel.logo}`,
+    path: `/channel/${channel.id}`,
+    exclusive: false,
+  }));
 
   const [isBeginning, setIsBeginning] = useState(true);
   const [isEnd, setIsEnd] = useState(false);
 
   if (settingsLoading) {
     return <CircleRowSkeleton />;
+  }
+
+  if (displayedChannels.length === 0) {
+    return (
+      <section className="w-full overflow-hidden bg-[#111618] py-5 text-white sm:py-7 lg:py-8">
+        <div className="mx-auto w-full max-w-[1680px] px-4 sm:px-6 lg:px-10 xl:px-[42px]">
+          <h2 className="mb-4 text-[22px] font-semibold tracking-[-0.5px] text-white sm:text-[26px] lg:text-[30px]">
+            {sectionTitle}
+          </h2>
+          <EmptySection />
+        </div>
+      </section>
+    );
   }
 
   const updateNavigation = (swiper) => {

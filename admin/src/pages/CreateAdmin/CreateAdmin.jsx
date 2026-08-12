@@ -35,6 +35,11 @@ const CreateAdmin = () => {
         label: "Promotion Requests",
         path: "/promotion-requests",
       },
+      {
+        key: "ad-campaigns",
+        label: "Ad Campaigns",
+        path: "/ad-campaigns",
+      },
 
       {
         key: "deposit-methods",
