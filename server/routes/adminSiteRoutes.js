@@ -49,6 +49,19 @@ router.put(
         identity.logo = `/uploads/${req.file.filename}`;
       }
 
+      const { facebook, youtube, telegram } = req.body || {};
+      if (
+        typeof facebook !== "undefined" ||
+        typeof youtube !== "undefined" ||
+        typeof telegram !== "undefined"
+      ) {
+        identity.socialLinks = {
+          facebook: facebook?.trim() || "",
+          youtube: youtube?.trim() || "",
+          telegram: telegram?.trim() || "",
+        };
+      }
+
       await identity.save();
 
       if (req.file && previousLogo) deleteLocalFile(previousLogo);

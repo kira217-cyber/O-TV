@@ -12,6 +12,8 @@ import {
 
 import AdOverlay from "../AdOverlay/AdOverlay";
 import { useAdCampaigns } from "../../hooks/useAdCampaigns";
+import { useWatchPresence } from "../../hooks/useWatchPresence";
+import { trackAction } from "../../hooks/presenceSocket";
 
 const formatTime = (seconds) => {
   if (!Number.isFinite(seconds)) return "0:00";
@@ -40,6 +42,7 @@ const VideoPlayer = ({ src, poster, title, adsTarget }) => {
   const [showControls, setShowControls] = useState(true);
 
   const { campaigns } = useAdCampaigns(adsTarget);
+  useWatchPresence("video", adsTarget?.video, title);
 
   // Autoplay as soon as a video is opened — most browsers block autoplay
   // with sound without prior interaction, so fall back to muted playback
@@ -66,8 +69,10 @@ const VideoPlayer = ({ src, poster, title, adsTarget }) => {
     if (!video) return;
     if (video.paused || video.ended) {
       video.play();
+      trackAction("Played video", title);
     } else {
       video.pause();
+      trackAction("Paused video", title);
     }
   };
 
@@ -82,6 +87,7 @@ const VideoPlayer = ({ src, poster, title, adsTarget }) => {
     const video = videoRef.current;
     if (!video) return;
     video.currentTime = Math.min(Math.max(video.currentTime + delta, 0), duration);
+    trackAction(delta > 0 ? "Skipped forward 10s" : "Rewound 10s", title);
   };
 
   const toggleMute = () => {
@@ -89,6 +95,7 @@ const VideoPlayer = ({ src, poster, title, adsTarget }) => {
     if (!video) return;
     video.muted = !video.muted;
     setMuted(video.muted);
+    trackAction(video.muted ? "Muted video" : "Unmuted video", title);
   };
 
   const handleVolume = (e) => {
@@ -106,8 +113,10 @@ const VideoPlayer = ({ src, poster, title, adsTarget }) => {
     if (!el) return;
     if (!document.fullscreenElement) {
       el.requestFullscreen?.();
+      trackAction("Entered fullscreen", title);
     } else {
       document.exitFullscreen?.();
+      trackAction("Exited fullscreen", title);
     }
   };
 

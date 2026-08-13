@@ -27,7 +27,6 @@ const CreateAdmin = () => {
       { key: "dashboard", label: "Dashboard", path: "/" },
 
       { key: "all-users", label: "Studio Users", path: "/all-users" },
-      { key: "normal-users", label: "Normal Users", path: "/normal-users" },
       { key: "videos", label: "Video Approvals", path: "/videos" },
       { key: "upload-video", label: "Upload Video", path: "/upload-video" },
       {
@@ -40,27 +39,10 @@ const CreateAdmin = () => {
         label: "Ad Campaigns",
         path: "/ad-campaigns",
       },
-
       {
-        key: "deposit-methods",
-        label: "Deposit Methods",
-        path: "/deposit-methods",
-      },
-      {
-        key: "deposit-requests",
-        label: "Deposit Requests",
-        path: "/deposit-requests",
-      },
-
-      {
-        key: "withdraw-methods",
-        label: "Withdraw Methods",
-        path: "/withdraw-methods",
-      },
-      {
-        key: "withdraw-requests",
-        label: "Withdraw Requests",
-        path: "/withdraw-requests",
+        key: "site-analytics",
+        label: "Site Analytics",
+        path: "/site-analytics",
       },
 
       {
@@ -107,23 +89,12 @@ const CreateAdmin = () => {
       },
 
       { key: "site-sliders", label: "Slider Control", path: "/site/sliders" },
-      {
-        key: "site-notices",
-        label: "Notice Control",
-        path: "/site/notices",
-      },
       { key: "site-ads", label: "Ads Images", path: "/site/ads" },
       {
         key: "site-footer-setting",
         label: "Footer Setting",
         path: "/site/footer-setting",
       },
-      {
-        key: "site-social-link",
-        label: "Social Link",
-        path: "/site/social-link",
-      },
-      { key: "site-why-us", label: "Why Us Setting", path: "/site/why-us" },
       {
         key: "site-identify",
         label: "Site Identify",

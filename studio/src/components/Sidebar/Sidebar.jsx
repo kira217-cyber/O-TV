@@ -17,6 +17,7 @@ import { motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchStudioProfile, logout } from "../../features/auth/authSlice";
 import { selectStudioUser } from "../../features/auth/authSelectors";
+import { useStudioPresence } from "../../hooks/useStudioPresence";
 
 const menuItems = [
   { to: "/", icon: <FaHome />, text: "Dashboard", end: true },
@@ -31,6 +32,8 @@ const Sidebar = () => {
   const navigate = useNavigate();
 
   const user = useSelector(selectStudioUser);
+
+  useStudioPresence();
 
   const [open, setOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { ImageUp, Info, Save, Trash2 } from "lucide-react";
+import { FaFacebookF, FaTelegramPlane, FaYoutube } from "react-icons/fa";
 
 import { api } from "../../api/axios";
 
@@ -17,11 +18,20 @@ const SiteIdentify = () => {
   const [saving, setSaving] = useState(false);
   const [clearing, setClearing] = useState(false);
 
+  const [facebook, setFacebook] = useState("");
+  const [youtube, setYoutube] = useState("");
+  const [telegram, setTelegram] = useState("");
+  const [savingSocial, setSavingSocial] = useState(false);
+
   const loadIdentity = async () => {
     try {
       setLoading(true);
       const { data } = await api.get("/api/admin/site/identity");
-      setLogo(data?.data?.identity?.logo || null);
+      const identity = data?.data?.identity;
+      setLogo(identity?.logo || null);
+      setFacebook(identity?.socialLinks?.facebook || "");
+      setYoutube(identity?.socialLinks?.youtube || "");
+      setTelegram(identity?.socialLinks?.telegram || "");
     } catch (error) {
       toast.error(error?.response?.data?.message || "Failed to load site logo");
     } finally {
@@ -94,6 +104,29 @@ const SiteIdentify = () => {
       toast.error(error?.response?.data?.message || "Failed to clear logo");
     } finally {
       setClearing(false);
+    }
+  };
+
+  const handleSaveSocial = async () => {
+    try {
+      setSavingSocial(true);
+
+      const formData = new FormData();
+      formData.append("facebook", facebook.trim());
+      formData.append("youtube", youtube.trim());
+      formData.append("telegram", telegram.trim());
+
+      const { data } = await api.put("/api/admin/site/identity", formData);
+      const identity = data?.data?.identity;
+
+      setFacebook(identity?.socialLinks?.facebook || "");
+      setYoutube(identity?.socialLinks?.youtube || "");
+      setTelegram(identity?.socialLinks?.telegram || "");
+      toast.success("Social links updated — now live on Footer");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to update social links");
+    } finally {
+      setSavingSocial(false);
     }
   };
 
@@ -184,6 +217,74 @@ const SiteIdentify = () => {
               )}
             </div>
           </>
+        )}
+      </div>
+
+      <div className="mt-8 max-w-2xl rounded-[28px] border border-[#8b5cf6]/20 bg-white/[0.06] p-6 shadow-2xl shadow-black/40 backdrop-blur-xl md:p-8">
+        <label className="mb-2 block text-sm font-semibold text-slate-200">
+          Social Links
+        </label>
+        <p className="mb-4 text-xs text-slate-400">
+          Shown as icons in the Footer's "Follow Us" section — each opens in
+          a new tab. Leave a field empty to hide that icon.
+        </p>
+
+        {loading ? (
+          <div className="py-10 text-center text-slate-400">Loading...</div>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-300">
+                <FaFacebookF className="h-3.5 w-3.5 text-[#1877f2]" />
+                Facebook URL
+              </label>
+              <input
+                type="text"
+                value={facebook}
+                onChange={(e) => setFacebook(e.target.value)}
+                placeholder="https://www.facebook.com/yourpage"
+                className="w-full rounded-2xl border border-[#8b5cf6]/20 bg-black/35 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 transition focus:border-[#8b5cf6]/70 focus:ring-2 focus:ring-[#8b5cf6]/20"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-300">
+                <FaYoutube className="h-3.5 w-3.5 text-[#ff0000]" />
+                YouTube URL
+              </label>
+              <input
+                type="text"
+                value={youtube}
+                onChange={(e) => setYoutube(e.target.value)}
+                placeholder="https://www.youtube.com/@yourchannel"
+                className="w-full rounded-2xl border border-[#8b5cf6]/20 bg-black/35 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 transition focus:border-[#8b5cf6]/70 focus:ring-2 focus:ring-[#8b5cf6]/20"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-300">
+                <FaTelegramPlane className="h-3.5 w-3.5 text-[#229ed9]" />
+                Telegram URL
+              </label>
+              <input
+                type="text"
+                value={telegram}
+                onChange={(e) => setTelegram(e.target.value)}
+                placeholder="https://t.me/yourchannel"
+                className="w-full rounded-2xl border border-[#8b5cf6]/20 bg-black/35 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 transition focus:border-[#8b5cf6]/70 focus:ring-2 focus:ring-[#8b5cf6]/20"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSaveSocial}
+              disabled={savingSocial}
+              className="flex cursor-pointer items-center gap-2 rounded-2xl bg-gradient-to-r from-[#c4b5fd] via-[#8b5cf6] to-[#4338ca] px-5 py-3 text-sm font-black text-white shadow-lg shadow-[#8b5cf6]/30 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Save className="h-4 w-4" />
+              {savingSocial ? "Saving..." : "Save Social Links"}
+            </button>
+          </div>
         )}
       </div>
     </div>

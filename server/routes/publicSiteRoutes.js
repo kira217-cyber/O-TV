@@ -38,8 +38,15 @@ const summarizePromotedVideo = (video, studioUser) => ({
   video: video.video,
 });
 
+// Home page videos per row are capped here so the single settings payload
+// stays small even as promotions grow — most recent 20 per section (the
+// query below is already sorted newest-first, so capping while bucketing
+// keeps that order).
+const MAX_PROMOTED_PER_SECTION = 20;
+
 // Single combined payload — every home page component reads its own slice
-// from this instead of each firing a separate request.
+// from this instead of each firing a separate request. Kept as one call so
+// the home page never fans out into a burst of per-section requests.
 router.get("/settings", async (req, res) => {
   try {
     const now = new Date();
@@ -98,12 +105,19 @@ router.get("/settings", async (req, res) => {
       const summary = summarizePromotedVideo(promotion.video, promotion.studioUser);
 
       promotion.sections.forEach((section) => {
-        if (promotedVideos[section]) promotedVideos[section].push(summary);
+        if (promotedVideos[section] && promotedVideos[section].length < MAX_PROMOTED_PER_SECTION) {
+          promotedVideos[section].push(summary);
+        }
       });
     });
 
     return successResponse(res, "Site settings loaded", {
       logo: identity?.logo || null,
+      socialLinks: {
+        facebook: identity?.socialLinks?.facebook || "",
+        youtube: identity?.socialLinks?.youtube || "",
+        telegram: identity?.socialLinks?.telegram || "",
+      },
       footerLinks,
       ads,
       homeSections,

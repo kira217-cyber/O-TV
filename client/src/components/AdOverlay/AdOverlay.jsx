@@ -5,9 +5,10 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { SkipForward } from "lucide-react";
+import { SkipForward, Volume2, VolumeX } from "lucide-react";
 
 import { api } from "../../api/axios";
+import { trackAction } from "../../hooks/presenceSocket";
 
 // Fixed screen positions for the 4 image-ad sections an admin can fill —
 // exact px sizes kept in sync with IMAGE_AD_SECTION_SIZES in the admin app
@@ -38,7 +39,8 @@ const SECTION_POSITION_CLASSES = {
 // one ad is ever on screen at once, but each keeps its own cadence.
 const AdOverlay = forwardRef(({ videoRef, mode, campaigns, playbackStarted }, ref) => {
   const [activeCampaign, setActiveCampaign] = useState(null);
-  const [skipVisible, setSkipVisible] = useState(false);
+  const [skipCountdown, setSkipCountdown] = useState(0);
+  const [adMuted, setAdMuted] = useState(true);
 
   const adVideoRef = useRef(null);
   const activeRef = useRef(null);
@@ -84,11 +86,21 @@ const AdOverlay = forwardRef(({ videoRef, mode, campaigns, playbackStarted }, re
         else video.muted = true;
       }
 
-      setSkipVisible(false);
-      skipTimerRef.current = setTimeout(
-        () => setSkipVisible(true),
-        Math.max(0, (campaign.skipAfterSeconds ?? 5) * 1000),
-      );
+      setAdMuted(false);
+      const skipAfter = Math.max(0, Math.ceil(campaign.skipAfterSeconds ?? 5));
+      setSkipCountdown(skipAfter);
+
+      if (skipAfter > 0) {
+        skipTimerRef.current = setInterval(() => {
+          setSkipCountdown((previous) => {
+            if (previous <= 1) {
+              clearInterval(skipTimerRef.current);
+              return 0;
+            }
+            return previous - 1;
+          });
+        }, 1000);
+      }
     } else {
       hideTimerRef.current = setTimeout(
         endCurrentAd,
@@ -112,8 +124,8 @@ const AdOverlay = forwardRef(({ videoRef, mode, campaigns, playbackStarted }, re
     const finished = activeRef.current;
 
     clearTimeout(hideTimerRef.current);
-    clearTimeout(skipTimerRef.current);
-    setSkipVisible(false);
+    clearInterval(skipTimerRef.current);
+    setSkipCountdown(0);
     setActiveCampaign(null);
     activeRef.current = null;
 
@@ -149,11 +161,33 @@ const AdOverlay = forwardRef(({ videoRef, mode, campaigns, playbackStarted }, re
   useEffect(
     () => () => {
       clearTimeout(hideTimerRef.current);
-      clearTimeout(skipTimerRef.current);
+      clearInterval(skipTimerRef.current);
       showTimersRef.current.forEach((timer) => clearTimeout(timer));
     },
     [],
   );
+
+  // Ads start unmuted — most browsers block autoplay-with-sound without
+  // prior interaction, so fall back to muted playback (updating the mute
+  // icon to match) rather than leaving the ad stalled on a blocked play().
+  useEffect(() => {
+    if (!activeCampaign || activeCampaign.type !== "video") return undefined;
+
+    const video = adVideoRef.current;
+    if (!video) return undefined;
+
+    const tryPlay = async () => {
+      try {
+        await video.play();
+      } catch {
+        video.muted = true;
+        setAdMuted(true);
+        video.play().catch(() => {});
+      }
+    };
+
+    tryPlay();
+  }, [activeCampaign]);
 
   if (!activeCampaign) return null;
 
@@ -166,9 +200,11 @@ const AdOverlay = forwardRef(({ videoRef, mode, campaigns, playbackStarted }, re
             src={activeCampaign.video?.url}
             autoPlay
             playsInline
+            muted={adMuted}
             className="h-full w-full cursor-pointer object-contain"
             onClick={() => {
               if (activeCampaign.clickUrl) {
+                trackAction("Clicked ad", activeCampaign.title);
                 window.open(activeCampaign.clickUrl, "_blank", "noreferrer");
               }
             }}
@@ -179,11 +215,36 @@ const AdOverlay = forwardRef(({ videoRef, mode, campaigns, playbackStarted }, re
             Ad
           </span>
 
-          {skipVisible && (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              const video = adVideoRef.current;
+              if (!video) return;
+              video.muted = !video.muted;
+              setAdMuted(video.muted);
+              trackAction(video.muted ? "Muted ad" : "Unmuted ad", activeCampaign.title);
+            }}
+            aria-label={adMuted ? "Unmute ad" : "Mute ad"}
+            className="absolute bottom-4 left-4 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-black/70 text-white backdrop-blur-sm transition hover:bg-black/85"
+          >
+            {adMuted ? (
+              <VolumeX className="h-4 w-4" />
+            ) : (
+              <Volume2 className="h-4 w-4" />
+            )}
+          </button>
+
+          {skipCountdown > 0 ? (
+            <span className="pointer-events-none absolute bottom-4 right-4 flex items-center gap-1.5 rounded-full bg-black/70 px-4 py-2 text-xs font-bold text-white backdrop-blur-sm">
+              Skip in {skipCountdown}s
+            </span>
+          ) : (
             <button
               type="button"
               onClick={(event) => {
                 event.stopPropagation();
+                trackAction("Skipped ad", activeCampaign.title);
                 endCurrentAd();
               }}
               className="absolute bottom-4 right-4 flex cursor-pointer items-center gap-1.5 rounded-full bg-black/70 px-4 py-2 text-xs font-bold text-white backdrop-blur-sm transition hover:bg-black/85"

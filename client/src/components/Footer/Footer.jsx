@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router";
-import { FaFacebookF, FaYoutube } from "react-icons/fa";
+import { FaFacebookF, FaTelegramPlane, FaYoutube } from "react-icons/fa";
 
 import { api } from "../../api/axios";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
@@ -69,6 +69,30 @@ const Footer = () => {
           image: `${api.defaults.baseURL}${link.image}`,
         }))
       : DEFAULT_DOWNLOAD_LINKS;
+
+  const socialLinks = [
+    {
+      key: "facebook",
+      label: "Facebook",
+      url: settings?.socialLinks?.facebook,
+      icon: FaFacebookF,
+      hoverBg: "hover:bg-[#1877f2]",
+    },
+    {
+      key: "youtube",
+      label: "YouTube",
+      url: settings?.socialLinks?.youtube,
+      icon: FaYoutube,
+      hoverBg: "hover:bg-[#ff0000]",
+    },
+    {
+      key: "telegram",
+      label: "Telegram",
+      url: settings?.socialLinks?.telegram,
+      icon: FaTelegramPlane,
+      hoverBg: "hover:bg-[#229ed9]",
+    },
+  ].filter((link) => link.url);
 
   return (
     <footer className="w-full bg-[#111618] text-white">
@@ -168,33 +192,32 @@ const Footer = () => {
           </div>
 
           {/* Social media */}
-          <div className="mt-[42px] md:mt-0 md:text-right">
-            <h3 className="mb-[18px] text-[15px] font-semibold text-white">
-              Follow Us
-            </h3>
+          {socialLinks.length > 0 && (
+            <div className="mt-[42px] md:mt-0 md:text-center">
+              <h3 className="mb-[18px] text-[15px] font-semibold text-white">
+                Follow Us
+              </h3>
 
-            <div className="flex items-center justify-center gap-3 md:justify-end">
-              <a
-                href="https://www.facebook.com/"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Follow us on Facebook"
-                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#272d2f] text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#1877f2]"
-              >
-                <FaFacebookF size={18} />
-              </a>
+              <div className="flex items-center justify-center gap-3 md:justify-end">
+                {socialLinks.map((link) => {
+                  const Icon = link.icon;
 
-              <a
-                href="https://www.youtube.com/"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Follow us on YouTube"
-                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#272d2f] text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#ff0000]"
-              >
-                <FaYoutube size={18} />
-              </a>
+                  return (
+                    <a
+                      key={link.key}
+                      href={link.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Follow us on ${link.label}`}
+                      className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-[#272d2f] text-white transition-all duration-200 hover:-translate-y-0.5 ${link.hoverBg}`}
+                    >
+                      <Icon size={18} />
+                    </a>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Second divider */}

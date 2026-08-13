@@ -9,19 +9,13 @@ import NotFoundPage from "../pages/NotFoundPage/NotFoundPage";
 
 import AllUsers from "../pages/AllUsers/AllUsers";
 import UserDetails from "../pages/UserDetails/UserDetails";
-import NormalUsers from "../pages/NormalUsers/NormalUsers";
 
 import Videos from "../pages/Videos/Videos";
 import VideoDetails from "../pages/VideoDetails/VideoDetails";
 import UploadVideo from "../pages/UploadVideo/UploadVideo";
 import PromotionRequests from "../pages/PromotionRequests/PromotionRequests";
 import AdCampaigns from "../pages/AdCampaigns/AdCampaigns";
-
-import DepositMethods from "../pages/DepositMethods/DepositMethods";
-import DepositRequests from "../pages/DepositRequests/DepositRequests";
-
-import WithdrawMethods from "../pages/WithdrawMethods/WithdrawMethods";
-import WithdrawRequests from "../pages/WithdrawRequests/WithdrawRequests";
+import SiteAnalytics from "../pages/SiteAnalytics/SiteAnalytics";
 
 import ContentHollywood from "../pages/ContentHollywood/ContentHollywood";
 import ContentHorror from "../pages/ContentHorror/ContentHorror";
@@ -35,11 +29,8 @@ import ContentAllOtt from "../pages/ContentAllOtt/ContentAllOtt";
 import ContentFavoriteBanner from "../pages/ContentFavoriteBanner/ContentFavoriteBanner";
 
 import SiteSliders from "../pages/SiteSliders/SiteSliders";
-import SiteNotices from "../pages/SiteNotices/SiteNotices";
 import SiteAds from "../pages/SiteAds/SiteAds";
 import SiteFooterSetting from "../pages/SiteFooterSetting/SiteFooterSetting";
-import SiteSocialLink from "../pages/SiteSocialLink/SiteSocialLink";
-import SiteWhyUs from "../pages/SiteWhyUs/SiteWhyUs";
 import SiteIdentify from "../pages/SiteIdentify/SiteIdentify";
 
 const wrap = (permKey, Component) => (
@@ -88,10 +79,6 @@ export const routes = createBrowserRouter([
         path: "all-users/:id",
         element: wrap("all-users", UserDetails),
       },
-      {
-        path: "normal-users",
-        element: wrap("normal-users", NormalUsers),
-      },
 
       { path: "videos", element: wrap("videos", Videos) },
       { path: "videos/:id", element: wrap("videos", VideoDetails) },
@@ -104,23 +91,9 @@ export const routes = createBrowserRouter([
         path: "ad-campaigns",
         element: wrap("ad-campaigns", AdCampaigns),
       },
-
       {
-        path: "deposit-methods",
-        element: wrap("deposit-methods", DepositMethods),
-      },
-      {
-        path: "deposit-requests",
-        element: wrap("deposit-requests", DepositRequests),
-      },
-
-      {
-        path: "withdraw-methods",
-        element: wrap("withdraw-methods", WithdrawMethods),
-      },
-      {
-        path: "withdraw-requests",
-        element: wrap("withdraw-requests", WithdrawRequests),
+        path: "site-analytics",
+        element: wrap("site-analytics", SiteAnalytics),
       },
 
       {
@@ -165,17 +138,11 @@ export const routes = createBrowserRouter([
       },
 
       { path: "site/sliders", element: wrap("site-sliders", SiteSliders) },
-      { path: "site/notices", element: wrap("site-notices", SiteNotices) },
       { path: "site/ads", element: wrap("site-ads", SiteAds) },
       {
         path: "site/footer-setting",
         element: wrap("site-footer-setting", SiteFooterSetting),
       },
-      {
-        path: "site/social-link",
-        element: wrap("site-social-link", SiteSocialLink),
-      },
-      { path: "site/why-us", element: wrap("site-why-us", SiteWhyUs) },
       {
         path: "site/site-identify",
         element: wrap("site-identify", SiteIdentify),

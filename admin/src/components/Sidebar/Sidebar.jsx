@@ -6,19 +6,13 @@ import {
   FaSignOutAlt,
   FaSearch,
   FaUsers,
-  FaUserAlt,
   FaUserCircle,
   FaTimes,
   FaChevronDown,
   FaChevronUp,
-  FaWallet,
-  FaMoneyBillWave,
-  FaPlusCircle,
-  FaClipboardList,
   FaLayerGroup,
   FaSlidersH,
   FaUserShield,
-  FaShareAlt,
   FaImage,
   FaFilm,
   FaGlobe,
@@ -26,8 +20,8 @@ import {
   FaCloudUploadAlt,
   FaBullhorn,
   FaAd,
+  FaChartLine,
 } from "react-icons/fa";
-import { FaNotesMedical } from "react-icons/fa6";
 import { IoFootstepsOutline } from "react-icons/io5";
 import { GrUserAdmin } from "react-icons/gr";
 import { MdFavorite } from "react-icons/md";
@@ -45,8 +39,6 @@ const Sidebar = () => {
 
   const [open, setOpen] = useState(false);
   const [usersOpen, setUsersOpen] = useState(false);
-  const [depositOpen, setDepositOpen] = useState(false);
-  const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [contentOpen, setContentOpen] = useState(false);
   const [siteOpen, setSiteOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
@@ -109,6 +101,12 @@ const Sidebar = () => {
         text: "Ad Campaigns",
       },
       {
+        key: "site-analytics",
+        to: "/site-analytics",
+        icon: <FaChartLine />,
+        text: "Site Analytics",
+      },
+      {
         key: "__mother__",
         to: "/create-admin",
         icon: <GrUserAdmin />,
@@ -125,48 +123,6 @@ const Sidebar = () => {
         to: "/all-users",
         icon: <FaUsers />,
         text: "Studio Users",
-      },
-      {
-        key: "normal-users",
-        to: "/normal-users",
-        icon: <FaUserAlt />,
-        text: "Normal Users",
-      },
-    ],
-    [],
-  );
-
-  const depositItems = useMemo(
-    () => [
-      {
-        key: "deposit-methods",
-        to: "/deposit-methods",
-        icon: <FaPlusCircle />,
-        text: "Deposit Methods",
-      },
-      {
-        key: "deposit-requests",
-        to: "/deposit-requests",
-        icon: <FaClipboardList />,
-        text: "Deposit Requests",
-      },
-    ],
-    [],
-  );
-
-  const withdrawItems = useMemo(
-    () => [
-      {
-        key: "withdraw-methods",
-        to: "/withdraw-methods",
-        icon: <FaMoneyBillWave />,
-        text: "Withdraw Methods",
-      },
-      {
-        key: "withdraw-requests",
-        to: "/withdraw-requests",
-        icon: <FaWallet />,
-        text: "Withdraw Requests",
       },
     ],
     [],
@@ -247,12 +203,6 @@ const Sidebar = () => {
         text: "Slider Control",
       },
       {
-        key: "site-notices",
-        to: "/site/notices",
-        icon: <FaNotesMedical />,
-        text: "Notice Control",
-      },
-      {
         key: "site-ads",
         to: "/site/ads",
         icon: <FaImage />,
@@ -263,18 +213,6 @@ const Sidebar = () => {
         to: "/site/footer-setting",
         icon: <IoFootstepsOutline />,
         text: "Footer Setting",
-      },
-      {
-        key: "site-social-link",
-        to: "/site/social-link",
-        icon: <FaShareAlt />,
-        text: "Social Link",
-      },
-      {
-        key: "site-why-us",
-        to: "/site/why-us",
-        icon: <FaGlobe />,
-        text: "Why Us Setting",
       },
       {
         key: "site-identify",
@@ -299,16 +237,6 @@ const Sidebar = () => {
     [userItems, permissions, isMother],
   );
 
-  const visibleDepositItems = useMemo(
-    () => depositItems.filter((item) => canAccess(item.key)),
-    [depositItems, permissions, isMother],
-  );
-
-  const visibleWithdrawItems = useMemo(
-    () => withdrawItems.filter((item) => canAccess(item.key)),
-    [withdrawItems, permissions, isMother],
-  );
-
   const visibleContentItems = useMemo(
     () => contentItems.filter((item) => canAccess(item.key)),
     [contentItems, permissions, isMother],
@@ -321,17 +249,9 @@ const Sidebar = () => {
 
   useEffect(() => {
     if (!visibleUserItems.length) setUsersOpen(false);
-    if (!visibleDepositItems.length) setDepositOpen(false);
-    if (!visibleWithdrawItems.length) setWithdrawOpen(false);
     if (!visibleContentItems.length) setContentOpen(false);
     if (!visibleSiteItems.length) setSiteOpen(false);
-  }, [
-    visibleUserItems.length,
-    visibleDepositItems.length,
-    visibleWithdrawItems.length,
-    visibleContentItems.length,
-    visibleSiteItems.length,
-  ]);
+  }, [visibleUserItems.length, visibleContentItems.length, visibleSiteItems.length]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -425,28 +345,6 @@ const Sidebar = () => {
                   open={usersOpen}
                   setOpen={setUsersOpen}
                   items={visibleUserItems}
-                  onClose={() => setOpen(false)}
-                />
-              )}
-
-              {visibleDepositItems.length > 0 && (
-                <DropdownSection
-                  title="Deposit"
-                  icon={<FaWallet />}
-                  open={depositOpen}
-                  setOpen={setDepositOpen}
-                  items={visibleDepositItems}
-                  onClose={() => setOpen(false)}
-                />
-              )}
-
-              {visibleWithdrawItems.length > 0 && (
-                <DropdownSection
-                  title="Withdraw"
-                  icon={<FaMoneyBillWave />}
-                  open={withdrawOpen}
-                  setOpen={setWithdrawOpen}
-                  items={visibleWithdrawItems}
                   onClose={() => setOpen(false)}
                 />
               )}

@@ -1,13 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Search, UserRound, X } from "lucide-react";
+import { Search, Tv, X } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router";
 
 import { api } from "../../api/axios";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
+import { trackAction } from "../../hooks/presenceSocket";
 
 const DEFAULT_LOGO_URL =
   "https://asset.bioscopelive.com/uploads/images/2025/07/28/images_d6ce912746f794656d087b55ef04100d_goplay_bios.png?w=560";
+
+const STUDIO_REGISTER_URL = `${
+  import.meta.env.VITE_STUDIO_URL || "http://localhost:5174"
+}/register`;
 
 const navItems = [
   {
@@ -87,6 +92,7 @@ const Navber = () => {
 
     if (!value) return;
 
+    trackAction("Searched", value);
     setSearchOpen(false);
     navigate(`/search?q=${encodeURIComponent(value)}`);
   };
@@ -164,13 +170,15 @@ const Navber = () => {
               <Search size={22} strokeWidth={1.8} />
             </button>
 
-            <NavLink
-              to="/login"
+            <a
+              href={STUDIO_REGISTER_URL}
+              target="_blank"
+              rel="noreferrer"
               className="flex h-[38px] cursor-pointer items-center gap-2 rounded-[9px] border border-white px-4 text-[15px] font-semibold text-white transition-all duration-200 hover:border-[#16d6dc] hover:bg-[#16d6dc] hover:text-[#111618]"
             >
-              <UserRound size={18} strokeWidth={1.7} />
-              <span>Login</span>
-            </NavLink>
+              <Tv size={18} strokeWidth={1.7} />
+              <span>Create Channel</span>
+            </a>
           </div>
         </div>
 
@@ -203,13 +211,15 @@ const Navber = () => {
                 <Search size={21} strokeWidth={1.7} />
               </button>
 
-              <NavLink
-                to="/login"
+              <a
+                href={STUDIO_REGISTER_URL}
+                target="_blank"
+                rel="noreferrer"
                 className="flex h-[31px] cursor-pointer items-center gap-[7px] rounded-[8px] border border-white px-[10px] text-[12px] font-semibold text-white transition-all duration-200 hover:border-[#16d6dc] hover:bg-[#16d6dc] hover:text-[#111618]"
               >
-                <UserRound size={17} strokeWidth={1.7} />
-                <span>Login</span>
-              </NavLink>
+                <Tv size={17} strokeWidth={1.7} />
+                <span>Create Channel</span>
+              </a>
             </div>
           </div>
 

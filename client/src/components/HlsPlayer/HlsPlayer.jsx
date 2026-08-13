@@ -11,6 +11,8 @@ import {
 
 import AdOverlay from "../AdOverlay/AdOverlay";
 import { useAdCampaigns } from "../../hooks/useAdCampaigns";
+import { useWatchPresence } from "../../hooks/useWatchPresence";
+import { trackAction } from "../../hooks/presenceSocket";
 
 const HlsPlayer = ({ src, poster, title, adsTarget }) => {
   const containerRef = useRef(null);
@@ -27,6 +29,7 @@ const HlsPlayer = ({ src, poster, title, adsTarget }) => {
   const [error, setError] = useState(false);
 
   const { campaigns } = useAdCampaigns(adsTarget);
+  useWatchPresence("liveTv", adsTarget?.liveTv, title);
 
   // Attaches and autoplays as soon as the channel is opened — falls back to
   // muted playback if the browser blocks autoplay-with-sound.
@@ -82,8 +85,10 @@ const HlsPlayer = ({ src, poster, title, adsTarget }) => {
 
     if (video.paused || video.ended) {
       video.play();
+      trackAction("Resumed Live TV", title);
     } else {
       video.pause();
+      trackAction("Paused Live TV", title);
     }
   };
 
@@ -92,6 +97,7 @@ const HlsPlayer = ({ src, poster, title, adsTarget }) => {
     if (!video) return;
     video.muted = !video.muted;
     setMuted(video.muted);
+    trackAction(video.muted ? "Muted Live TV" : "Unmuted Live TV", title);
   };
 
   const toggleFullscreen = () => {
@@ -99,8 +105,10 @@ const HlsPlayer = ({ src, poster, title, adsTarget }) => {
     if (!el) return;
     if (!document.fullscreenElement) {
       el.requestFullscreen?.();
+      trackAction("Entered fullscreen", title);
     } else {
       document.exitFullscreen?.();
+      trackAction("Exited fullscreen", title);
     }
   };
 

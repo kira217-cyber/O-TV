@@ -100,6 +100,30 @@ const VideoPlayer = ({ src, poster, title }) => {
 
   useEffect(() => () => clearTimeout(hideTimer.current), []);
 
+  // Autoplay as soon as this player mounts (opened from a video click) —
+  // most browsers block autoplay with sound without prior interaction, so
+  // fall back to muted playback rather than leaving the player stalled.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !src) return;
+
+    const tryPlay = async () => {
+      try {
+        await video.play();
+      } catch {
+        video.muted = true;
+        setMuted(true);
+        try {
+          await video.play();
+        } catch {
+          // Autoplay blocked entirely — user can press play manually.
+        }
+      }
+    };
+
+    tryPlay();
+  }, [src]);
+
   return (
     <div
       ref={containerRef}

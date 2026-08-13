@@ -18,6 +18,11 @@ import {
   buildBunnyFileName,
 } from "../utils/videoFiles.js";
 import { publicVideo } from "../utils/videoSerializer.js";
+import {
+  setUploadProgress,
+  getUploadProgress,
+  clearUploadProgress,
+} from "../utils/uploadProgress.js";
 
 const router = express.Router();
 
@@ -38,6 +43,7 @@ router.post(
     const portraitFile = files.thumbnailPortrait?.[0];
     const videoFile = files.video?.[0];
     const trailerFile = files.trailer?.[0];
+    const uploadId = req.body?.uploadId;
 
     const rollbackActions = [];
     const rollback = async () => {
@@ -138,6 +144,7 @@ router.post(
         videoFile.buffer,
         videoFileName,
         videoFile.mimetype,
+        uploadId ? (percent) => setUploadProgress(uploadId, percent) : undefined,
       );
       rollbackActions.push(async () => deleteFromBunny(videoFileName));
 
@@ -194,9 +201,19 @@ router.post(
     } catch (error) {
       await rollback();
       return errorResponse(res, error.message, 500);
+    } finally {
+      clearUploadProgress(uploadId);
     }
   },
 );
+
+/* =========================
+   Live Upload Progress (polled while a create/update request is in flight)
+========================= */
+router.get("/upload-progress/:uploadId", protectAdmin, (req, res) => {
+  const percent = getUploadProgress(req.params.uploadId);
+  return successResponse(res, "Upload progress", { percent: percent ?? 0 });
+});
 
 /* =========================
    Video Stats (for the admin dashboard)
@@ -342,6 +359,7 @@ router.put(
     const portraitFile = files.thumbnailPortrait?.[0];
     const videoFile = files.video?.[0];
     const trailerFile = files.trailer?.[0];
+    const uploadId = req.body?.uploadId;
 
     const rollbackActions = [];
     const rollback = async () => {
@@ -413,6 +431,7 @@ router.put(
           videoFile.buffer,
           newVideoFileName,
           videoFile.mimetype,
+          uploadId ? (percent) => setUploadProgress(uploadId, percent) : undefined,
         );
         rollbackActions.push(async () => deleteFromBunny(newVideoFileName));
         oldVideoFileName = video.video?.fileName;
@@ -453,6 +472,8 @@ router.put(
     } catch (error) {
       await rollback();
       return errorResponse(res, error.message, 500);
+    } finally {
+      clearUploadProgress(uploadId);
     }
   },
 );

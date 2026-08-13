@@ -1,5 +1,5 @@
 import React from "react";
-import { Flame, Home, UserRound } from "lucide-react";
+import { Flame, Home } from "lucide-react";
 import { PiFilmSlate } from "react-icons/pi";
 import { NavLink } from "react-router";
 
@@ -22,12 +22,6 @@ const bottomNavItems = [
     icon: Flame,
     type: "lucide",
   },
-  {
-    name: "Account",
-    path: "/account",
-    icon: UserRound,
-    type: "lucide",
-  },
 ];
 
 const BottomNavbar = () => {
@@ -35,7 +29,7 @@ const BottomNavbar = () => {
     <>
       {/* Mobile-only bottom navbar */}
       <nav className="fixed inset-x-0 bottom-0 z-[9999] block border-t border-white/[0.06] bg-[#111618]/90 shadow-[0_-8px_25px_rgba(0,0,0,0.2)] backdrop-blur-xl md:hidden">
-        <div className="grid h-[72px] grid-cols-4 items-center px-2 pb-[env(safe-area-inset-bottom)]">
+        <div className="grid h-[72px] grid-cols-3 items-center px-2 pb-[env(safe-area-inset-bottom)]">
           {bottomNavItems.map((item) => {
             const Icon = item.icon;
 

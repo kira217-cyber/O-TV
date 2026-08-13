@@ -6,6 +6,7 @@ import Skeleton from "react-loading-skeleton";
 import { api } from "../../api/axios";
 import AdOverlay from "../../components/AdOverlay/AdOverlay";
 import { useAdCampaigns } from "../../hooks/useAdCampaigns";
+import { useWatchPresence } from "../../hooks/useWatchPresence";
 
 const formatTime = (seconds) => {
   if (!Number.isFinite(seconds)) return "0:00";
@@ -39,6 +40,10 @@ const ShortItem = ({ video, base }) => {
     () => campaigns.filter((campaign) => campaign.type === "video"),
     [campaigns],
   );
+
+  // Only counted as "watching" while this reel is actually the one playing
+  // — clears automatically once scrolled past or paused.
+  useWatchPresence("video", playing ? video.id : null, video.title);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -244,12 +249,27 @@ const Shorts = () => {
           No shorts available right now.
         </div>
       ) : (
-        <div className="mx-auto h-full w-full max-w-[520px] snap-y snap-mandatory overflow-y-auto">
+        <div className="shorts-feed-scroll mx-auto h-full w-full max-w-[520px] snap-y snap-mandatory overflow-y-auto">
           {videos.map((video) => (
             <ShortItem key={video.id} video={video} base={base} />
           ))}
         </div>
       )}
+
+      {/* Hide the scroll container's scrollbar — snap-scrolling reels don't
+          need a visible track, and it clutters the mobile full-screen view. */}
+      <style>
+        {`
+          .shorts-feed-scroll {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+          }
+
+          .shorts-feed-scroll::-webkit-scrollbar {
+            display: none;
+          }
+        `}
+      </style>
     </div>
   );
 };

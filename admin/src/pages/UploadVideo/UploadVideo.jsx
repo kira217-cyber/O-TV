@@ -13,6 +13,30 @@ const UploadVideo = () => {
   const [progress, setProgress] = useState(0);
 
   const handleSubmit = async (formData) => {
+    // Uploading to our own server is usually fast — the real wait is our
+    // server relaying it to Bunny storage afterward. Combine both legs into
+    // one bar: 0-50% while the browser sends bytes to us, 50-100% polled
+    // from the server while it pushes the file to Bunny.
+    const uploadId =
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    formData.append("uploadId", uploadId);
+
+    let bunnyPercent = 0;
+    const pollBunnyProgress = setInterval(async () => {
+      try {
+        const { data } = await api.get(
+          `/api/admin/videos/upload-progress/${uploadId}`,
+        );
+        bunnyPercent = data?.data?.percent ?? bunnyPercent;
+        setProgress((previous) => Math.max(previous, 50 + Math.round(bunnyPercent / 2)));
+      } catch {
+        // Non-critical — the bar just won't advance this tick.
+      }
+    }, 400);
+
     try {
       setSubmitting(true);
       setProgress(0);
@@ -20,15 +44,18 @@ const UploadVideo = () => {
       await api.post("/api/admin/videos", formData, {
         onUploadProgress: (event) => {
           if (!event.total) return;
-          setProgress(Math.round((event.loaded / event.total) * 100));
+          const clientPercent = Math.round((event.loaded / event.total) * 100);
+          setProgress((previous) => Math.max(previous, Math.round(clientPercent / 2)));
         },
       });
 
+      setProgress(100);
       toast.success("Video uploaded and published successfully");
       navigate("/videos");
     } catch (error) {
       toast.error(error?.response?.data?.message || "Failed to upload video");
     } finally {
+      clearInterval(pollBunnyProgress);
       setSubmitting(false);
       setProgress(0);
     }

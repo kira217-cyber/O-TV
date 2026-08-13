@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Navber from "../components/Navber/Navber";
 import { Outlet, useLocation } from "react-router";
 import Footer from "../components/Footer/Footer";
@@ -6,9 +6,19 @@ import FloatingSocial from "../components/FloatingSocial/FloatingSocial";
 import BottomNavbar from "../components/BottomNavbar/BottomNavbar";
 import Slider from "../components/Slider/Slider";
 import LiveTvMobileHeader from "../components/LiveTvMobileHeader/LiveTvMobileHeader";
+import { getPresenceSocket } from "../hooks/presenceSocket";
 
 const RootLayout = () => {
   const location = useLocation();
+
+  // Reports "currently browsing <path>" to the live Site Analytics
+  // dashboard in admin — connects the shared socket immediately (not just
+  // when a video/live-tv player mounts) so browsing-only visitors show up
+  // there too, and re-reports on every route change.
+  useEffect(() => {
+    getPresenceSocket().emit("page:view", { path: location.pathname });
+  }, [location.pathname]);
+
   const isShortsPage = location.pathname.startsWith("/shorts");
   const isLiveTvPage = location.pathname.startsWith("/live-tv");
   const NO_SLIDER_PAGES = [

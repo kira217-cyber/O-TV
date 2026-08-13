@@ -118,6 +118,7 @@ const VideoDetails = () => {
   const [deciding, setDeciding] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [showRejectBox, setShowRejectBox] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [showTrailer, setShowTrailer] = useState(false);
@@ -293,8 +294,31 @@ const VideoDetails = () => {
   const handleSave = async (e) => {
     e.preventDefault();
 
+    // Uploading to our own server is usually fast — the real wait is our
+    // server relaying a replaced video file to Bunny storage afterward.
+    // Combine both legs into one bar: 0-50% while the browser sends bytes
+    // to us, 50-100% polled from the server while it pushes to Bunny.
+    const uploadId =
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    let bunnyPercent = 0;
+    const pollBunnyProgress = setInterval(async () => {
+      try {
+        const { data } = await api.get(
+          `/api/admin/videos/upload-progress/${uploadId}`,
+        );
+        bunnyPercent = data?.data?.percent ?? bunnyPercent;
+        setProgress((previous) => Math.max(previous, 50 + Math.round(bunnyPercent / 2)));
+      } catch {
+        // Non-critical — the bar just won't advance this tick.
+      }
+    }, 400);
+
     try {
       setSaving(true);
+      setProgress(0);
 
       const formData = new FormData();
       formData.append("title", title.trim());
@@ -306,10 +330,18 @@ const VideoDetails = () => {
       if (portraitFile) formData.append("thumbnailPortrait", portraitFile);
       if (videoFile) formData.append("video", videoFile);
       if (trailerFile) formData.append("trailer", trailerFile);
+      formData.append("uploadId", uploadId);
 
-      const { data } = await api.put(`/api/admin/videos/${id}`, formData);
+      const { data } = await api.put(`/api/admin/videos/${id}`, formData, {
+        onUploadProgress: (event) => {
+          if (!event.total) return;
+          const clientPercent = Math.round((event.loaded / event.total) * 100);
+          setProgress((previous) => Math.max(previous, Math.round(clientPercent / 2)));
+        },
+      });
       const updated = data?.data?.video || data?.video;
 
+      setProgress(100);
       setVideo(updated);
       setLandscapeFile(null);
       setLandscapePreview(null);
@@ -323,7 +355,9 @@ const VideoDetails = () => {
     } catch (error) {
       toast.error(error?.response?.data?.message || "Failed to update video");
     } finally {
+      clearInterval(pollBunnyProgress);
       setSaving(false);
+      setProgress(0);
     }
   };
 
@@ -827,6 +861,24 @@ const VideoDetails = () => {
               />
             )}
           </div>
+
+          {saving && (
+            <div>
+              <div className="mb-2 flex items-center justify-between text-xs font-semibold text-slate-300">
+                <span className="flex items-center gap-1.5">
+                  <Film className="h-3.5 w-3.5 text-[#8b5cf6]" />
+                  Saving...
+                </span>
+                <span>{progress}%</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-black/40">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#c4b5fd] via-[#8b5cf6] to-[#4338ca] transition-all duration-200"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          )}
 
           <button
             type="submit"
