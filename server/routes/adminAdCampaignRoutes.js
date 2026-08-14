@@ -3,6 +3,9 @@ import express from "express";
 import AdCampaign, {
   TARGET_SCOPES,
   IMAGE_AD_SECTIONS,
+  IMAGE_AD_DEFAULT_POSITIONS,
+  IMAGE_AD_DEFAULT_SIZES,
+  MIN_SECTION_SIZE_PERCENT,
 } from "../models/AdCampaign.js";
 import Video from "../models/Video.js";
 import LiveTvChannel from "../models/LiveTvChannel.js";
@@ -27,6 +30,58 @@ const SECTION_FIELD_MAP = {
   topRight: "topRightImage",
   bottomRight: "bottomRightImage",
   bottomBanner: "bottomBannerImage",
+};
+
+// Percentage value — clamps to [min, max] and falls back to a default
+// when the request didn't send a usable number.
+const clampPercent = (value, fallback, min = 0, max = 100) => {
+  const num = parseFloat(value);
+  const resolved = Number.isFinite(num) ? num : fallback;
+  return Math.min(max, Math.max(min, resolved));
+};
+
+// Both size and position are admin-draggable now (resize handle + move),
+// so a section can never be saved such that it extends past the frame —
+// size is resolved first, then position is clamped against `100 - size`
+// for that axis. Mirrors the equivalent logic in
+// admin/src/components/AdCampaignManager/AdCampaignManager.jsx's drag
+// handlers. bottomBanner's width/positionX are always locked (100/0) —
+// it's always full-frame width, only its height and vertical position
+// are adjustable.
+const resolveSectionGeometry = (section, body, existing) => {
+  const fallbackPos = IMAGE_AD_DEFAULT_POSITIONS[section];
+  const fallbackSize = IMAGE_AD_DEFAULT_SIZES[section];
+  const hasExistingImage = Boolean(existing?.image);
+
+  const fallbackWidth =
+    hasExistingImage && existing?.width ? existing.width : fallbackSize.width;
+  const fallbackHeight =
+    hasExistingImage && existing?.height ? existing.height : fallbackSize.height;
+
+  const width =
+    section === "bottomBanner"
+      ? 100
+      : clampPercent(body?.[`${section}Width`], fallbackWidth, MIN_SECTION_SIZE_PERCENT, 100);
+  const height = clampPercent(
+    body?.[`${section}Height`],
+    fallbackHeight,
+    MIN_SECTION_SIZE_PERCENT,
+    100,
+  );
+
+  // An empty slot's stored position is just an unused schema default
+  // (0/0), not a real placement — fall back to the sensible corner
+  // default instead so a freshly-filled slot doesn't land at 0,0.
+  const fallbackX = hasExistingImage ? existing?.positionX ?? fallbackPos.x : fallbackPos.x;
+  const fallbackY = hasExistingImage ? existing?.positionY ?? fallbackPos.y : fallbackPos.y;
+
+  const positionX =
+    section === "bottomBanner"
+      ? 0
+      : clampPercent(body?.[`${section}PositionX`], fallbackX, 0, 100 - width);
+  const positionY = clampPercent(body?.[`${section}PositionY`], fallbackY, 0, 100 - height);
+
+  return { width, height, positionX, positionY };
 };
 
 // Video targeting and Live TV targeting are independent toggles — resolves
@@ -176,7 +231,19 @@ router.post("/", handleUpload(uploadAdFields), async (req, res) => {
         if (file) {
           const imagePath = await saveThumbnail(file);
           rollbackActions.push(async () => deleteLocalFile(imagePath));
-          imageSections[section] = { image: imagePath, url: urlValue?.trim() || null };
+          const { width, height, positionX, positionY } = resolveSectionGeometry(
+            section,
+            req.body,
+            null,
+          );
+          imageSections[section] = {
+            image: imagePath,
+            url: urlValue?.trim() || null,
+            positionX,
+            positionY,
+            width,
+            height,
+          };
           hasAnySection = true;
         }
       }
@@ -329,6 +396,11 @@ router.put("/:id", handleUpload(uploadAdFields), async (req, res) => {
         const urlValue = req.body?.[`${section}Url`];
         const removeFlag = req.body?.[`${section}Remove`];
         const existing = campaign.imageSections?.[section];
+        const { width, height, positionX, positionY } = resolveSectionGeometry(
+          section,
+          req.body,
+          existing,
+        );
 
         if (file) {
           const imagePath = await saveThumbnail(file);
@@ -337,14 +409,35 @@ router.put("/:id", handleUpload(uploadAdFields), async (req, res) => {
           campaign.imageSections[section] = {
             image: imagePath,
             url: typeof urlValue !== "undefined" ? urlValue?.trim() || null : existing?.url || null,
+            positionX,
+            positionY,
+            width,
+            height,
           };
         } else if (removeFlag === "true") {
           oldSectionImages[section] = existing?.image;
-          campaign.imageSections[section] = { image: null, url: null };
-        } else if (typeof urlValue !== "undefined") {
+          campaign.imageSections[section] = {
+            image: null,
+            url: null,
+            positionX,
+            positionY,
+            width,
+            height,
+          };
+        } else if (
+          typeof urlValue !== "undefined" ||
+          typeof req.body?.[`${section}PositionX`] !== "undefined" ||
+          typeof req.body?.[`${section}PositionY`] !== "undefined" ||
+          typeof req.body?.[`${section}Width`] !== "undefined" ||
+          typeof req.body?.[`${section}Height`] !== "undefined"
+        ) {
           campaign.imageSections[section] = {
             image: existing?.image || null,
-            url: urlValue?.trim() || null,
+            url: typeof urlValue !== "undefined" ? urlValue?.trim() || null : existing?.url || null,
+            positionX,
+            positionY,
+            width,
+            height,
           };
         }
       }

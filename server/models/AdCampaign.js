@@ -12,10 +12,44 @@ export const IMAGE_AD_SECTIONS = [
   "bottomBanner",
 ];
 
+// Default drag position (percentage of the frame, top-left corner of the
+// box) for each section — a sensible starting point close to where the
+// old fixed-corner layout used to place it; admin can drag from there.
+// bottomBanner always spans full width, so its positionX is unused.
+export const IMAGE_AD_DEFAULT_POSITIONS = {
+  topLeft: { x: 2, y: 4 },
+  topRight: { x: 78, y: 4 },
+  bottomRight: { x: 78, y: 22 },
+  bottomBanner: { x: 0, y: 85 },
+};
+
+// Default drag SIZE (percentage of the frame's width/height) for each
+// section — matches what the old fixed-px sizes (200x280, 180x110,
+// 180x110, full-width x 70) worked out to on a representative ~960px-wide
+// frame, so existing campaigns keep roughly the same look after admin
+// starts resizing from here. bottomBanner's width is always 100 (locked).
+export const IMAGE_AD_DEFAULT_SIZES = {
+  topLeft: { width: 20.83, height: 51.85 },
+  topRight: { width: 18.75, height: 20.37 },
+  bottomRight: { width: 18.75, height: 20.37 },
+  bottomBanner: { width: 100, height: 12.96 },
+};
+
+// Percentage size and position are both admin-draggable now (position
+// AND size), so a box can never be resized/positioned such that it
+// extends past the frame — see MIN_SECTION_SIZE_PERCENT and the position
+// clamp in adminAdCampaignRoutes.js, which caps position at
+// `100 - <that section's own current width/height>`.
+export const MIN_SECTION_SIZE_PERCENT = 3;
+
 const imageSectionSchema = new mongoose.Schema(
   {
     image: { type: String, default: null },
     url: { type: String, default: null },
+    positionX: { type: Number, default: 0, min: 0, max: 100 },
+    positionY: { type: Number, default: 0, min: 0, max: 100 },
+    width: { type: Number, default: 0, min: 0, max: 100 },
+    height: { type: Number, default: 0, min: 0, max: 100 },
   },
   { _id: false },
 );

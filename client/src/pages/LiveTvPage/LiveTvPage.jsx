@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Radio, Search } from "lucide-react";
 
 import { api } from "../../api/axios";
 import HlsPlayer from "../../components/HlsPlayer/HlsPlayer";
+import ScheduledLiveTvPlayer from "../../components/ScheduledLiveTvPlayer/ScheduledLiveTvPlayer";
 import CircleGridSkeleton from "../../components/Skeletons/CircleGridSkeleton";
 
 const LIMIT = 48;
@@ -34,7 +35,10 @@ const LiveTvPage = () => {
 
           setSelectedChannel((current) => {
             if (current || loaded.length === 0) return current;
-            return loaded[Math.floor(Math.random() * loaded.length)];
+            // O-TV (the site's own channel) is the default landing view
+            // when it exists — everything else is picked at random.
+            const otv = loaded.find((channel) => channel.channelType === "scheduled");
+            return otv || loaded[Math.floor(Math.random() * loaded.length)];
           });
         })
         .catch(() => {
@@ -61,15 +65,27 @@ const LiveTvPage = () => {
 
       {selectedChannel && (
         <div className="sm:mt-5">
-          <HlsPlayer
-            key={selectedChannel._id}
-            src={selectedChannel.streamUrl}
-            poster={
-              selectedChannel.logo ? `${base}${selectedChannel.logo}` : undefined
-            }
-            title={selectedChannel.name}
-            adsTarget={{ liveTv: selectedChannel._id }}
-          />
+          {selectedChannel.channelType === "scheduled" ? (
+            <ScheduledLiveTvPlayer
+              key={selectedChannel._id}
+              channelId={selectedChannel._id}
+              poster={
+                selectedChannel.logo ? `${base}${selectedChannel.logo}` : undefined
+              }
+              title={selectedChannel.name}
+              adsTarget={{ liveTv: selectedChannel._id }}
+            />
+          ) : (
+            <HlsPlayer
+              key={selectedChannel._id}
+              src={selectedChannel.streamUrl}
+              poster={
+                selectedChannel.logo ? `${base}${selectedChannel.logo}` : undefined
+              }
+              title={selectedChannel.name}
+              adsTarget={{ liveTv: selectedChannel._id }}
+            />
+          )}
 
           {/* "Now playing" bar — mobile only, matches the site's cyan theme */}
           <div className="mt-3 flex items-center gap-3 rounded-2xl border border-[#16d6dc]/25 bg-[#16d6dc]/[0.07] px-4 py-3 md:hidden">

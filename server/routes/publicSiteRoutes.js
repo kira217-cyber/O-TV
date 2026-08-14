@@ -9,11 +9,17 @@ import Promotion, { PROMOTABLE_SECTIONS } from "../models/Promotion.js";
 import Video, { CATEGORY_OPTIONS } from "../models/Video.js";
 import StudioUser from "../models/StudioUser.js";
 import LiveTvChannel from "../models/LiveTvChannel.js";
+import ScheduledLiveTvChannel from "../models/ScheduledLiveTvChannel.js";
 import AdCampaign from "../models/AdCampaign.js";
 
 import { successResponse, errorResponse } from "../utils/response.js";
 import { ensureHomeSection, ensureAdsSlot } from "../utils/siteDefaults.js";
 import { publicVideo } from "../utils/videoSerializer.js";
+import {
+  resolveNowPlaying,
+  resolveAllTimeVideo,
+  resolveUpcoming,
+} from "../utils/liveTvSchedule.js";
 
 const router = express.Router();
 
@@ -59,7 +65,8 @@ router.get("/settings", async (req, res) => {
       heroSlides,
       activePromotions,
       channels,
-      liveTvChannels,
+      externalLiveTvChannels,
+      scheduledLiveTvChannels,
     ] = await Promise.all([
       SiteIdentity.findOne(),
       FooterLink.find().sort({ order: 1, createdAt: 1 }),
@@ -75,8 +82,14 @@ router.get("/settings", async (req, res) => {
         .populate({ path: "video", match: { status: "active" } })
         .populate("studioUser", "fullName channel"),
       StudioUser.find({ "channel.featured": true }).select("fullName channel"),
-      LiveTvChannel.find({ homeFeatured: true }).sort({ order: 1, createdAt: 1 }),
+      LiveTvChannel.find({ homeFeatured: true }),
+      ScheduledLiveTvChannel.find({ homeFeatured: true }),
     ]);
+
+    const liveTvChannels = [
+      ...externalLiveTvChannels.map((c) => withChannelType(c, "external")),
+      ...scheduledLiveTvChannels.map((c) => withChannelType(c, "scheduled")),
+    ].sort(byChannelPriority);
 
     const ads = {};
     adsList.forEach((entry) => {
@@ -363,8 +376,70 @@ router.get("/channels/:studioUserId", async (req, res) => {
   }
 });
 
+// External-stream channels (LiveTvChannel) and admin-uploaded scheduled
+// channels (ScheduledLiveTvChannel) live in two entirely separate
+// collections/models — neither shares a field with the other, so every
+// public endpoint below tags each plain object with an explicit
+// `channelType` itself (not stored in the DB) and merges the two lists,
+// rather than querying one combined collection.
+const withChannelType = (doc, channelType) => ({
+  ...(doc.toObject ? doc.toObject() : doc),
+  channelType,
+});
+
+// O-TV (channelType "scheduled" — there's only ever one) always leads
+// every merged channel list, ahead of every external channel regardless
+// of `order`/`createdAt`; external channels are then sorted amongst
+// themselves as before.
+const byChannelPriority = (a, b) => {
+  if (a.channelType !== b.channelType) {
+    return a.channelType === "scheduled" ? -1 : 1;
+  }
+  return a.order !== b.order ? a.order - b.order : new Date(a.createdAt) - new Date(b.createdAt);
+};
+
+const findAnyChannelById = async (id) => {
+  const [external, scheduled] = await Promise.all([
+    LiveTvChannel.findById(id).catch(() => null),
+    ScheduledLiveTvChannel.findById(id).catch(() => null),
+  ]);
+
+  if (external) return withChannelType(external, "external");
+  if (scheduled) return withChannelType(scheduled, "scheduled");
+  return null;
+};
+
 // Full Live TV directory — every managed channel (not just the
 // home-featured ones already in the /settings bundle), paginated 48/page.
+// For a "scheduled" channel (O-TV), figures out which video should be
+// playing right now and at what offset — either a scheduled slot, or
+// (falling back) whichever video the endless "all time" pool loop is
+// currently on. Returns null for "external" channels (they just play
+// their streamUrl as-is) or a scheduled channel with nothing configured.
+const UPCOMING_LOOKAHEAD_SECONDS = 5;
+
+const buildNowPlaying = (channel) => {
+  if (channel.channelType !== "scheduled") return null;
+
+  const resolved = resolveNowPlaying(channel);
+  const fallback = resolved ? null : resolveAllTimeVideo(channel.allTimeVideos, new Date());
+  const result = resolved || fallback;
+  if (!result?.video?.url) return null;
+
+  // Lets the player start preloading the next scheduled video's file a
+  // few seconds before it's due, so the actual switch is instant.
+  const upcoming = resolveUpcoming(channel, new Date(), UPCOMING_LOOKAHEAD_SECONDS);
+
+  return {
+    video: { url: result.video.url },
+    offsetSeconds: result.offsetSeconds,
+    isFallback: !resolved,
+    upcoming: upcoming?.video?.url
+      ? { video: { url: upcoming.video.url }, startsInSeconds: upcoming.startsInSeconds }
+      : null,
+  };
+};
+
 router.get("/live-tv", async (req, res) => {
   try {
     const { search, page: pageQuery, limit: limitQuery } = req.query || {};
@@ -378,13 +453,18 @@ router.get("/live-tv", async (req, res) => {
     const page = Math.max(1, parseInt(pageQuery, 10) || 1);
     const limit = Math.max(1, Math.min(100, parseInt(limitQuery, 10) || 48));
 
-    const [channels, total] = await Promise.all([
-      LiveTvChannel.find(filter)
-        .sort({ order: 1, createdAt: 1 })
-        .skip((page - 1) * limit)
-        .limit(limit),
-      LiveTvChannel.countDocuments(filter),
+    const [externalChannels, scheduledChannels] = await Promise.all([
+      LiveTvChannel.find(filter),
+      ScheduledLiveTvChannel.find(filter),
     ]);
+
+    const combined = [
+      ...externalChannels.map((c) => withChannelType(c, "external")),
+      ...scheduledChannels.map((c) => withChannelType(c, "scheduled")),
+    ].sort(byChannelPriority);
+
+    const total = combined.length;
+    const channels = combined.slice((page - 1) * limit, (page - 1) * limit + limit);
 
     return successResponse(res, "Live TV channels loaded", {
       channels,
@@ -399,17 +479,46 @@ router.get("/live-tv", async (req, res) => {
 
 router.get("/live-tv/:id", async (req, res) => {
   try {
-    const channel = await LiveTvChannel.findById(req.params.id);
+    const channel = await findAnyChannelById(req.params.id);
 
     if (!channel) {
       return errorResponse(res, "Channel not found", 404);
     }
 
-    const related = await LiveTvChannel.find({ _id: { $ne: channel._id } })
-      .sort({ order: 1, createdAt: 1 })
-      .limit(12);
+    const [externalRelated, scheduledRelated] = await Promise.all([
+      LiveTvChannel.find({ _id: { $ne: channel._id } }),
+      ScheduledLiveTvChannel.find({ _id: { $ne: channel._id } }),
+    ]);
 
-    return successResponse(res, "Live TV channel loaded", { channel, related });
+    const related = [
+      ...externalRelated.map((c) => withChannelType(c, "external")),
+      ...scheduledRelated.map((c) => withChannelType(c, "scheduled")),
+    ]
+      .sort(byChannelPriority)
+      .slice(0, 12);
+
+    const nowPlaying = buildNowPlaying(channel);
+
+    return successResponse(res, "Live TV channel loaded", { channel, related, nowPlaying });
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+});
+
+// Polled periodically by a "scheduled" channel's player to detect
+// schedule transitions (e.g. one programmed video ending and the next
+// one starting) without re-fetching the whole channel + related list.
+router.get("/live-tv/:id/now-playing", async (req, res) => {
+  try {
+    const channel = await findAnyChannelById(req.params.id);
+
+    if (!channel) {
+      return errorResponse(res, "Channel not found", 404);
+    }
+
+    const nowPlaying = buildNowPlaying(channel);
+
+    return successResponse(res, "Now playing loaded", { nowPlaying });
   } catch (error) {
     return errorResponse(res, error.message, 500);
   }

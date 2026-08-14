@@ -10,16 +10,22 @@ import { SkipForward, Volume2, VolumeX } from "lucide-react";
 import { api } from "../../api/axios";
 import { trackAction } from "../../hooks/presenceSocket";
 
-// Fixed screen positions for the 4 image-ad sections an admin can fill —
-// exact px sizes kept in sync with IMAGE_AD_SECTION_SIZES in the admin app
-// (admin/src/constants/adsOptions.js) so the upload hints match reality.
-// Smaller on mobile (screen is small) than on desktop (sm: breakpoint up).
-const SECTION_POSITION_CLASSES = {
-  topLeft: "left-2 top-2 h-[150px] w-[110px] sm:left-3 sm:top-3 sm:h-[280px] sm:w-[200px]",
-  topRight: "right-2 top-2 h-[60px] w-[100px] sm:right-3 sm:top-3 sm:h-[110px] sm:w-[180px]",
-  bottomRight:
-    "right-2 top-[76px] h-[60px] w-[100px] sm:right-3 sm:top-[134px] sm:h-[110px] sm:w-[180px]",
-  bottomBanner: "inset-x-2 bottom-2 h-[40px] sm:inset-x-3 sm:bottom-3 sm:h-[70px]",
+// Both size and position are admin-draggable (resize + move handles in
+// AdCampaignManager.jsx) and stored per-campaign as percentages of the
+// frame — the exact same percentages the admin's own mockup preview
+// uses, so what's dragged there is exactly what renders here, at any
+// real player width. These are only a fallback for a campaign saved
+// before resizing existed (no stored width/height yet). Kept in sync
+// with IMAGE_AD_DEFAULT_SIZES in server/models/AdCampaign.js.
+//
+// bottomBanner is the one exception: it's always full frame width, so
+// its horizontal position/size are pinned edge-to-edge below instead of
+// using the stored/admin-dragged values.
+const DEFAULT_SECTION_SIZE = {
+  topLeft: { width: 20.83, height: 51.85 },
+  topRight: { width: 18.75, height: 20.37 },
+  bottomRight: { width: 18.75, height: 20.37 },
+  bottomBanner: { width: 100, height: 12.96 },
 };
 
 // Shared ad-rotation engine mounted inside both VideoPlayer (mode="pause")
@@ -262,9 +268,13 @@ const AdOverlay = forwardRef(({ videoRef, mode, campaigns, playbackStarted }, re
 
     return (
       <>
-        {Object.entries(SECTION_POSITION_CLASSES).map(([key, positionClass]) => {
+        {Object.entries(DEFAULT_SECTION_SIZE).map(([key, defaultSize]) => {
           const section = sections[key];
           if (!section?.image) return null;
+
+          const isBanner = key === "bottomBanner";
+          const width = isBanner ? 100 : section.width || defaultSize.width;
+          const height = section.height || defaultSize.height;
 
           return (
             <a
@@ -274,8 +284,15 @@ const AdOverlay = forwardRef(({ videoRef, mode, campaigns, playbackStarted }, re
               rel={section.url ? "noreferrer" : undefined}
               onClick={(event) => {
                 if (!section.url) event.preventDefault();
+                else trackAction("Clicked image ad", section.url);
               }}
-              className={`absolute z-30 overflow-hidden rounded-lg border border-white/20 shadow-lg shadow-black/40 ${positionClass} ${
+              style={{
+                left: isBanner ? 0 : `${section.positionX ?? 0}%`,
+                top: `${section.positionY ?? 0}%`,
+                width: `${width}%`,
+                height: `${height}%`,
+              }}
+              className={`absolute z-30 overflow-hidden rounded-lg border border-white/20 shadow-lg shadow-black/40 ${
                 section.url ? "cursor-pointer" : "cursor-default"
               }`}
             >

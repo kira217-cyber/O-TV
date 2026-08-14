@@ -4,6 +4,7 @@ import { Radio } from "lucide-react";
 
 import { api } from "../../api/axios";
 import HlsPlayer from "../../components/HlsPlayer/HlsPlayer";
+import ScheduledLiveTvPlayer from "../../components/ScheduledLiveTvPlayer/ScheduledLiveTvPlayer";
 import PlayerSkeleton from "../../components/Skeletons/PlayerSkeleton";
 
 const LiveTvWatch = () => {
@@ -11,6 +12,7 @@ const LiveTvWatch = () => {
   const navigate = useNavigate();
 
   const [channel, setChannel] = useState(null);
+  const [nowPlaying, setNowPlaying] = useState(null);
   const [related, setRelated] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,6 +22,7 @@ const LiveTvWatch = () => {
         setLoading(true);
         const { data } = await api.get(`/api/site/live-tv/${id}`);
         setChannel(data?.data?.channel || null);
+        setNowPlaying(data?.data?.nowPlaying || null);
         setRelated(data?.data?.related || []);
       } catch {
         navigate("/live-tv", { replace: true });
@@ -43,13 +46,24 @@ const LiveTvWatch = () => {
   return (
     <div className="mx-auto w-full max-w-[1680px] px-4 pb-16 pt-4 text-white sm:px-6 lg:px-10 xl:px-[42px]">
       <div className="pt-5">
-        <HlsPlayer
-          key={channel._id}
-          src={channel.streamUrl}
-          poster={channel.logo ? `${base}${channel.logo}` : undefined}
-          title={channel.name}
-          adsTarget={{ liveTv: channel._id }}
-        />
+        {channel.channelType === "scheduled" ? (
+          <ScheduledLiveTvPlayer
+            key={channel._id}
+            channelId={channel._id}
+            initialNowPlaying={nowPlaying}
+            poster={channel.logo ? `${base}${channel.logo}` : undefined}
+            title={channel.name}
+            adsTarget={{ liveTv: channel._id }}
+          />
+        ) : (
+          <HlsPlayer
+            key={channel._id}
+            src={channel.streamUrl}
+            poster={channel.logo ? `${base}${channel.logo}` : undefined}
+            title={channel.name}
+            adsTarget={{ liveTv: channel._id }}
+          />
+        )}
       </div>
 
       <h1 className="mt-5 text-2xl font-bold text-white sm:text-3xl">

@@ -16,6 +16,7 @@ import publicSiteRoutes from "./routes/publicSiteRoutes.js";
 import promotionRoutes from "./routes/promotionRoutes.js";
 import adminPromotionRoutes from "./routes/adminPromotionRoutes.js";
 import adminAdCampaignRoutes from "./routes/adminAdCampaignRoutes.js";
+import adminScheduledLiveTvRoutes from "./routes/adminScheduledLiveTvRoutes.js";
 import { attachAnalyticsSocket } from "./sockets/analyticsSocket.js";
 
 const app = express();
@@ -42,6 +43,7 @@ app.use("/api/site", publicSiteRoutes);
 app.use("/api/studio/promotions", promotionRoutes);
 app.use("/api/admin/promotions", adminPromotionRoutes);
 app.use("/api/admin/ad-campaigns", adminAdCampaignRoutes);
+app.use("/api/admin/scheduled-live-tv", adminScheduledLiveTvRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });

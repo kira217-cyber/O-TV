@@ -28,6 +28,8 @@ const RootLayout = () => {
     "/faq",
     "/feedback",
     "/contact-us",
+    "/channel/",
+    "/creator-channels",
   ];
   const showSlider =
     !isShortsPage &&

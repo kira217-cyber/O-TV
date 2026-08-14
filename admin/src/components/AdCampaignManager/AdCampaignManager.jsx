@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import {
   Calendar,
   Film,
   ImageUp,
+  Move,
   Pencil,
   Power,
   Save,
@@ -18,28 +19,29 @@ import { api } from "../../api/axios";
 import {
   TARGET_SCOPES,
   IMAGE_AD_SECTIONS,
-  IMAGE_AD_SECTION_SIZES,
+  IMAGE_AD_DEFAULT_POSITIONS,
+  IMAGE_AD_DEFAULT_SIZES,
+  MIN_SECTION_SIZE_PERCENT,
 } from "../../constants/adsOptions";
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
-// Mirrors client/src/components/AdOverlay/AdOverlay.jsx's on-screen layout,
-// scaled down for the mockup preview frame in this form.
-const MOCKUP_POSITION_CLASSES = {
-  topLeft: "left-2 top-2 h-16 w-24 sm:h-20 sm:w-28",
-  topRight: "right-2 top-2 h-14 w-20 sm:h-16 sm:w-24",
-  bottomRight: "right-2 top-20 h-14 w-20 sm:top-24 sm:h-16 sm:w-24",
-  bottomBanner: "inset-x-2 bottom-2 h-8 sm:h-10",
-};
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 const emptySections = () =>
   IMAGE_AD_SECTIONS.reduce((acc, section) => {
+    const fallbackPos = IMAGE_AD_DEFAULT_POSITIONS[section.key];
+    const fallbackSize = IMAGE_AD_DEFAULT_SIZES[section.key];
     acc[section.key] = {
       file: null,
       preview: null,
       url: "",
       existingImage: null,
       remove: false,
+      positionX: fallbackPos.x,
+      positionY: fallbackPos.y,
+      width: fallbackSize.width,
+      height: fallbackSize.height,
     };
     return acc;
   }, {});
@@ -83,6 +85,16 @@ const AdCampaignManager = () => {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
+
+  const mockupFrameRef = useRef(null);
+  // Direct-DOM drag/resize (see the block below `handleSectionUrlChange`)
+  // — these refs back that, kept up here with the component's other refs.
+  const boxRefs = useRef({});
+  const dragStateRef = useRef(null); // { key, mode: "move" | "resize" } | null
+  const liveValuesRef = useRef({}); // { [key]: { positionX, positionY, width, height } } — authoritative *during* a drag
+  const dragOffsetRef = useRef({ x: 0, y: 0 }); // grab point, so the box doesn't jump to be centered under the cursor
+  const pendingMoveRef = useRef(null);
+  const rafRef = useRef(null);
 
   const loadCampaigns = async () => {
     try {
@@ -180,12 +192,23 @@ const AdCampaignManager = () => {
     if (campaign.type === "image" && campaign.imageSections) {
       IMAGE_AD_SECTIONS.forEach(({ key }) => {
         const existing = campaign.imageSections[key];
+        const fallbackPos = IMAGE_AD_DEFAULT_POSITIONS[key];
+        const fallbackSize = IMAGE_AD_DEFAULT_SIZES[key];
+        // An empty slot's stored position/size is just an unused schema
+        // default (0), not a real placement — show the sensible default
+        // instead so a freshly-filled slot doesn't jump to the top-left
+        // at zero size.
+        const hasImage = Boolean(existing?.image);
         nextSections[key] = {
           file: null,
           preview: null,
           remove: false,
           url: existing?.url || "",
           existingImage: existing?.image || null,
+          positionX: hasImage ? (existing?.positionX ?? fallbackPos.x) : fallbackPos.x,
+          positionY: hasImage ? (existing?.positionY ?? fallbackPos.y) : fallbackPos.y,
+          width: hasImage ? existing?.width || fallbackSize.width : fallbackSize.width,
+          height: hasImage ? existing?.height || fallbackSize.height : fallbackSize.height,
         };
       });
     }
@@ -242,6 +265,132 @@ const AdCampaignManager = () => {
       [key]: { ...prev[key], file: null, preview: null, remove: true },
     }));
   };
+
+  // Drag-to-position and drag-to-resize for the mockup preview —
+  // percentage-based (of the mockup frame's own width/height) so a
+  // section renders at the *exact* same proportion here as it does on
+  // the real client frame (client/src/components/AdOverlay/AdOverlay.jsx
+  // sizes the same way against its own frame) — true 1:1 WYSIWYG at any
+  // real player width, not just an approximation.
+  //
+  // During an active drag, position/size updates bypass React state
+  // entirely — mutating the box's own DOM style directly via boxRefs —
+  // so dragging tracks the pointer at full frame rate regardless of how
+  // much the rest of this form re-renders. `liveValuesRef` holds the
+  // authoritative in-progress values; `sections` state is only updated
+  // once, on pointerup, to persist the final result.
+  const applyLiveStyle = (key) => {
+    const el = boxRefs.current[key];
+    const live = liveValuesRef.current[key];
+    if (!el || !live) return;
+    el.style.left = `${live.positionX}%`;
+    el.style.top = `${live.positionY}%`;
+    el.style.width = `${live.width}%`;
+    el.style.height = `${live.height}%`;
+  };
+
+  const pointerToFramePercent = (clientX, clientY) => {
+    const frame = mockupFrameRef.current;
+    if (!frame) return null;
+    const rect = frame.getBoundingClientRect();
+    return {
+      x: ((clientX - rect.left) / rect.width) * 100,
+      y: ((clientY - rect.top) / rect.height) * 100,
+    };
+  };
+
+  const handleMovePointerDown = (key) => (event) => {
+    event.preventDefault();
+    const point = pointerToFramePercent(event.clientX, event.clientY);
+    if (!point) return;
+
+    const current = sections[key];
+    dragOffsetRef.current = { x: point.x - current.positionX, y: point.y - current.positionY };
+    liveValuesRef.current[key] = { ...current };
+    dragStateRef.current = { key, mode: "move" };
+  };
+
+  const handleResizePointerDown = (key) => (event) => {
+    event.preventDefault();
+    event.stopPropagation(); // don't also trigger the box's own move handler
+    liveValuesRef.current[key] = { ...sections[key] };
+    dragStateRef.current = { key, mode: "resize" };
+  };
+
+  const applyMove = (key, clientX, clientY) => {
+    const point = pointerToFramePercent(clientX, clientY);
+    const live = liveValuesRef.current[key];
+    if (!point || !live) return;
+
+    const rawX = point.x - dragOffsetRef.current.x;
+    const rawY = point.y - dragOffsetRef.current.y;
+    live.positionX = key === "bottomBanner" ? 0 : clamp(rawX, 0, 100 - live.width);
+    live.positionY = clamp(rawY, 0, 100 - live.height);
+    applyLiveStyle(key);
+  };
+
+  const applyResize = (key, clientX, clientY) => {
+    const point = pointerToFramePercent(clientX, clientY);
+    const live = liveValuesRef.current[key];
+    if (!point || !live) return;
+
+    const rawWidth = point.x - live.positionX;
+    const rawHeight = point.y - live.positionY;
+    live.width =
+      key === "bottomBanner"
+        ? 100
+        : clamp(rawWidth, MIN_SECTION_SIZE_PERCENT, 100 - live.positionX);
+    live.height = clamp(rawHeight, MIN_SECTION_SIZE_PERCENT, 100 - live.positionY);
+    applyLiveStyle(key);
+  };
+
+  // Batches pointermove-driven updates to at most once per animation
+  // frame — the browser can fire pointermove far faster than it repaints,
+  // so applying every single event is wasted work that can still read as
+  // jittery; this caps it to exactly what the screen can actually show.
+  const handleFramePointerMove = (event) => {
+    if (!dragStateRef.current) return;
+    pendingMoveRef.current = { clientX: event.clientX, clientY: event.clientY };
+
+    if (rafRef.current) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      const drag = dragStateRef.current;
+      const pending = pendingMoveRef.current;
+      if (!drag || !pending) return;
+
+      if (drag.mode === "move") applyMove(drag.key, pending.clientX, pending.clientY);
+      else applyResize(drag.key, pending.clientX, pending.clientY);
+    });
+  };
+
+  const stopDragging = () => {
+    const drag = dragStateRef.current;
+    if (drag) {
+      const live = liveValuesRef.current[drag.key];
+      if (live) {
+        setSections((prev) => ({ ...prev, [drag.key]: { ...prev[drag.key], ...live } }));
+      }
+    }
+    dragStateRef.current = null;
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("pointermove", handleFramePointerMove);
+    window.addEventListener("pointerup", stopDragging);
+    window.addEventListener("pointercancel", stopDragging);
+
+    return () => {
+      window.removeEventListener("pointermove", handleFramePointerMove);
+      window.removeEventListener("pointerup", stopDragging);
+      window.removeEventListener("pointercancel", stopDragging);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -310,6 +459,10 @@ const AdCampaignManager = () => {
           if (section.file) formData.append(`${key}Image`, section.file);
           if (section.remove) formData.append(`${key}Remove`, "true");
           formData.append(`${key}Url`, section.url?.trim() || "");
+          formData.append(`${key}PositionX`, String(section.positionX));
+          formData.append(`${key}PositionY`, String(section.positionY));
+          formData.append(`${key}Width`, String(section.width));
+          formData.append(`${key}Height`, String(section.height));
         });
         formData.append("displayDurationSeconds", String(displayDurationSeconds));
       }
@@ -491,12 +644,17 @@ const AdCampaignManager = () => {
           ) : (
             <div className="space-y-4 rounded-2xl border border-[#8b5cf6]/15 bg-black/20 p-4">
               <p className="text-xs text-slate-400">
-                Fill in any of the 4 positions — leave the rest empty. The
-                frame below previews exactly where each one will appear.
+                Fill in any of the 4 positions, then on the frame below
+                drag a box to move it and drag its corner handle (bottom
+                edge for Bottom Banner) to resize it — exactly where and
+                how big you place it here is exactly what viewers see.
               </p>
 
-              <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-[#8b5cf6]/20 bg-black/50">
-                <p className="absolute inset-0 flex items-center justify-center px-6 text-center text-[11px] text-slate-600">
+              <div
+                ref={mockupFrameRef}
+                className="relative aspect-video w-full touch-none select-none overflow-hidden rounded-xl border border-[#8b5cf6]/20 bg-black/50"
+              >
+                <p className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center text-[11px] text-slate-600">
                   Video / Live TV frame
                 </p>
 
@@ -513,13 +671,40 @@ const AdCampaignManager = () => {
                   return (
                     <div
                       key={key}
-                      className={`absolute overflow-hidden rounded border border-white/50 bg-white shadow-lg ${MOCKUP_POSITION_CLASSES[key]}`}
+                      ref={(el) => {
+                        boxRefs.current[key] = el;
+                      }}
+                      onPointerDown={handleMovePointerDown(key)}
+                      style={{
+                        left: `${section.positionX}%`,
+                        top: `${section.positionY}%`,
+                        width: `${section.width}%`,
+                        height: `${section.height}%`,
+                      }}
+                      className="group absolute cursor-grab overflow-hidden rounded border border-white/50 bg-white shadow-lg active:cursor-grabbing"
                     >
                       <img
                         src={previewSrc}
                         alt={label}
-                        className="h-full w-full object-cover"
+                        draggable={false}
+                        className="pointer-events-none h-full w-full select-none object-cover"
                       />
+                      <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition group-hover:bg-black/40 group-hover:opacity-100">
+                        <Move className="h-4 w-4 text-white" />
+                      </span>
+
+                      {/* Resize handle — corner grip for the 3 free-size
+                          sections, bottom-edge only for bottomBanner
+                          (its width is always locked full-frame). */}
+                      <span
+                        onPointerDown={handleResizePointerDown(key)}
+                        title="Drag to resize"
+                        className={`absolute bottom-0 flex h-4 w-4 cursor-nwse-resize items-center justify-center rounded-tl bg-[#8b5cf6] opacity-70 transition hover:opacity-100 ${
+                          key === "bottomBanner" ? "inset-x-0 mx-auto cursor-ns-resize" : "right-0"
+                        }`}
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                      </span>
                     </div>
                   );
                 })}
@@ -541,8 +726,9 @@ const AdCampaignManager = () => {
                     >
                       <p className="text-xs font-bold text-violet-200">{label}</p>
                       <p className="mb-2 text-[10px] text-slate-400">
-                        Desktop {IMAGE_AD_SECTION_SIZES[key].desktop} · Mobile{" "}
-                        {IMAGE_AD_SECTION_SIZES[key].mobile}
+                        {key === "bottomBanner"
+                          ? `Full width · ${section.height.toFixed(1)}% tall`
+                          : `${section.width.toFixed(1)}% × ${section.height.toFixed(1)}% of the frame`}
                       </p>
 
                       <div className="mb-2 flex h-28 w-full items-center justify-center overflow-hidden rounded-xl border-2 border-[#8b5cf6]/25 bg-black/30">

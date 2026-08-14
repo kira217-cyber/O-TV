@@ -21,6 +21,7 @@ import {
   FaBullhorn,
   FaAd,
   FaChartLine,
+  FaBroadcastTower,
 } from "react-icons/fa";
 import { IoFootstepsOutline } from "react-icons/io5";
 import { GrUserAdmin } from "react-icons/gr";
@@ -105,6 +106,12 @@ const Sidebar = () => {
         to: "/site-analytics",
         icon: <FaChartLine />,
         text: "Site Analytics",
+      },
+      {
+        key: "o-tv",
+        to: "/o-tv",
+        icon: <FaBroadcastTower />,
+        text: "O-TV",
       },
       {
         key: "__mother__",

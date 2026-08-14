@@ -44,6 +44,7 @@ const CreateAdmin = () => {
         label: "Site Analytics",
         path: "/site-analytics",
       },
+      { key: "o-tv", label: "O-TV", path: "/o-tv" },
 
       {
         key: "content-hollywood",

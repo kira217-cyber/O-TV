@@ -20,6 +20,7 @@ import SiteAnalytics from "../pages/SiteAnalytics/SiteAnalytics";
 import ContentHollywood from "../pages/ContentHollywood/ContentHollywood";
 import ContentHorror from "../pages/ContentHorror/ContentHorror";
 import ContentLiveTv from "../pages/ContentLiveTv/ContentLiveTv";
+import OTv from "../pages/OTv/OTv";
 import ContentFootball from "../pages/ContentFootball/ContentFootball";
 import ContentTrending from "../pages/ContentTrending/ContentTrending";
 import ContentTopTen from "../pages/ContentTopTen/ContentTopTen";
@@ -94,6 +95,10 @@ export const routes = createBrowserRouter([
       {
         path: "site-analytics",
         element: wrap("site-analytics", SiteAnalytics),
+      },
+      {
+        path: "o-tv",
+        element: wrap("o-tv", OTv),
       },
 
       {
