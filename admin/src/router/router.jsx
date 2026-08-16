@@ -34,6 +34,11 @@ import SiteAds from "../pages/SiteAds/SiteAds";
 import SiteFooterSetting from "../pages/SiteFooterSetting/SiteFooterSetting";
 import SiteIdentify from "../pages/SiteIdentify/SiteIdentify";
 
+import PrivateVideoPlaylist from "../pages/PrivateVideoPlaylist/PrivateVideoPlaylist";
+import PrivateVideo from "../pages/PrivateVideo/PrivateVideo";
+import PrivatePlaylistVideos from "../pages/PrivatePlaylistVideos/PrivatePlaylistVideos";
+import PrivateUser from "../pages/PrivateUser/PrivateUser";
+
 const wrap = (permKey, Component) => (
   <PrivateRoute permKey={permKey}>
     <Component />
@@ -151,6 +156,23 @@ export const routes = createBrowserRouter([
       {
         path: "site/site-identify",
         element: wrap("site-identify", SiteIdentify),
+      },
+
+      {
+        path: "private-video-playlist",
+        element: wrap("private-video-playlist", PrivateVideoPlaylist),
+      },
+      {
+        path: "private-video",
+        element: wrap("private-video", PrivateVideo),
+      },
+      {
+        path: "private-playlist-videos",
+        element: wrap("private-playlist-videos", PrivatePlaylistVideos),
+      },
+      {
+        path: "private-user",
+        element: wrap("private-user", PrivateUser),
       },
     ],
   },

@@ -101,6 +101,27 @@ const CreateAdmin = () => {
         label: "Site Identify",
         path: "/site/site-identify",
       },
+
+      {
+        key: "private-video-playlist",
+        label: "Private Video Playlist",
+        path: "/private-video-playlist",
+      },
+      {
+        key: "private-video",
+        label: "Private Video",
+        path: "/private-video",
+      },
+      {
+        key: "private-playlist-videos",
+        label: "Playlist Videos",
+        path: "/private-playlist-videos",
+      },
+      {
+        key: "private-user",
+        label: "Private User",
+        path: "/private-user",
+      },
     ],
     [],
   );

@@ -21,6 +21,9 @@ const RootLayout = () => {
 
   const isShortsPage = location.pathname.startsWith("/shorts");
   const isLiveTvPage = location.pathname.startsWith("/live-tv");
+  const isPrivatePage =
+    location.pathname.startsWith("/private-video") ||
+    location.pathname.startsWith("/private-user-login");
   const NO_SLIDER_PAGES = [
     "/watch/",
     "/terms-of-use",
@@ -35,6 +38,17 @@ const RootLayout = () => {
     !isShortsPage &&
     !isLiveTvPage &&
     !NO_SLIDER_PAGES.some((path) => location.pathname.startsWith(path));
+
+  // The private-video system is a self-contained section with its own
+  // header/branding (see PrivateHeader) — it never shows the public site's
+  // Navber, hero Slider, Footer, or BottomNavbar.
+  if (isPrivatePage) {
+    return (
+      <div className="min-h-screen bg-[#0b0f10]">
+        <Outlet />
+      </div>
+    );
+  }
 
   if (isShortsPage) {
     return (

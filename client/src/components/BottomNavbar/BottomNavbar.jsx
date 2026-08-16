@@ -65,7 +65,7 @@ const BottomNavbar = () => {
                     {/* Icon */}
                     <span
                       className={`relative z-10 flex h-[25px] items-center justify-center transition-transform duration-200 group-active:scale-90 ${
-                        isActive ? "text-white" : "text-[#d5d8d9]"
+                        isActive ? "text-white" : "text-[#0896c5]"
                       }`}
                     >
                       {item.type === "react-icon" ? (

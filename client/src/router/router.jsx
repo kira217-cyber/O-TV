@@ -1,6 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import RootLayout from "../RootLayout/RootLayout";
-import Home from "../pages/Home/Home";
+import HomeEntry from "../pages/Home/HomeEntry";
 import NotFoundPage from "../pages/NotFoundPage/NotFoundPage";
 import Login from "../pages/Login/Login";
 import Register from "../pages/Register/Register";
@@ -23,6 +23,9 @@ import PrivacyPolicy from "../pages/PrivacyPolicy/PrivacyPolicy";
 import Faq from "../pages/Faq/Faq";
 import Feedback from "../pages/Feedback/Feedback";
 import ContactUs from "../pages/ContactUs/ContactUs";
+import PrivateUserLogin from "../pages/PrivateUserLogin/PrivateUserLogin";
+import PrivateVideo from "../pages/PrivateVideo/PrivateVideo";
+import PrivateUserRoute from "../PrivateUserRoute/PrivateUserRoute";
 
 export const routes = createBrowserRouter([
   {
@@ -32,7 +35,7 @@ export const routes = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Home />,
+        element: <HomeEntry />,
       },
       {
         path: "watch/:id",
@@ -122,6 +125,18 @@ export const routes = createBrowserRouter([
       {
         path: "register",
         element: <Register />,
+      },
+      {
+        path: "private-user-login",
+        element: <PrivateUserLogin />,
+      },
+      {
+        path: "private-video",
+        element: (
+          <PrivateUserRoute>
+            <PrivateVideo />
+          </PrivateUserRoute>
+        ),
       },
     ],
   },

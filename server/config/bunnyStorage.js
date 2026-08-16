@@ -118,17 +118,41 @@ export const uploadToBunny = (buffer, fileName, contentType, onProgress) =>
     }
   });
 
+// Best-effort cleanup — callers never await this to fail the request over
+// it (e.g. during a video delete/replace), but "best-effort" must still
+// mean "we'd know if it didn't work": `fetch` only rejects on a
+// network-level failure, not on a non-2xx response, so a bad/expired
+// AccessKey, wrong storage zone/folder, or a transient Bunny 5xx would
+// previously resolve exactly like a real success and leave the file
+// orphaned on Bunny forever with zero trace anywhere. Every failure path
+// here is now logged so an orphan is at least visible in the server logs
+// instead of silently accumulating storage cost.
 export const deleteFromBunny = async (fileName) => {
   const { accessKey } = config();
-  if (!fileName || !accessKey) return;
+
+  if (!fileName) return;
+  if (!accessKey) {
+    console.error(
+      `Bunny delete skipped for ${fileName}: BUNNY_STORAGE_ACCESS_KEY is not configured`,
+    );
+    return;
+  }
 
   try {
-    await fetch(buildStorageUrl(fileName), {
+    const res = await fetch(buildStorageUrl(fileName), {
       method: "DELETE",
       headers: { AccessKey: accessKey },
     });
-  } catch {
-    // Best-effort cleanup — an orphaned remote file is not worth failing
-    // the request over (e.g. during a video delete/replace).
+
+    // 404 just means it's already gone (or never existed) — that's the
+    // desired end state, not a failure.
+    if (!res.ok && res.status !== 404) {
+      const body = await res.text().catch(() => "");
+      console.error(
+        `Bunny delete failed for ${fileName}: ${res.status} ${res.statusText}${body ? ` — ${body}` : ""}`,
+      );
+    }
+  } catch (error) {
+    console.error(`Bunny delete errored for ${fileName}: ${error.message}`);
   }
 };

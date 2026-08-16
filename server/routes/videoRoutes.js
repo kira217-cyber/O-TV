@@ -187,11 +187,41 @@ router.get("/", protectStudioUser, async (req, res) => {
 /* =========================
    My Video Stats (for the dashboard)
 ========================= */
+// Builds a full Jan..now-style month range (oldest first) so the uploads
+// chart never has a gap for a month with zero uploads — the aggregation
+// below only returns rows for months that actually have videos.
+const lastNMonths = (n) => {
+  const months = [];
+  const now = new Date();
+  for (let i = n - 1; i >= 0; i -= 1) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({ year: d.getFullYear(), month: d.getMonth() + 1 });
+  }
+  return months;
+};
+
+const MONTH_LABELS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
 router.get("/stats", protectStudioUser, async (req, res) => {
   try {
     const studioUser = req.studioUser._id;
+    const UPLOADS_MONTHS = 6;
+    const monthRange = lastNMonths(UPLOADS_MONTHS);
+    const rangeStart = new Date(monthRange[0].year, monthRange[0].month - 1, 1);
 
-    const [total, pending, active, rejected, viewsAgg] = await Promise.all([
+    const [
+      total,
+      pending,
+      active,
+      rejected,
+      viewsAgg,
+      uploadsByMonthAgg,
+      topVideosByViews,
+      categoryAgg,
+    ] = await Promise.all([
       Video.countDocuments({ studioUser }),
       Video.countDocuments({ studioUser, status: "pending" }),
       Video.countDocuments({ studioUser, status: "active" }),
@@ -200,7 +230,30 @@ router.get("/stats", protectStudioUser, async (req, res) => {
         { $match: { studioUser } },
         { $group: { _id: null, total: { $sum: "$views" } } },
       ]),
+      Video.aggregate([
+        { $match: { studioUser, createdAt: { $gte: rangeStart } } },
+        {
+          $group: {
+            _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+      Video.find({ studioUser }).sort({ views: -1 }).limit(6).select("title views"),
+      Video.aggregate([
+        { $match: { studioUser } },
+        { $group: { _id: "$category", count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+      ]),
     ]);
+
+    const uploadsByMonthMap = new Map(
+      uploadsByMonthAgg.map((entry) => [`${entry._id.year}-${entry._id.month}`, entry.count]),
+    );
+    const uploadsOverTime = monthRange.map(({ year, month }) => ({
+      label: MONTH_LABELS[month - 1],
+      count: uploadsByMonthMap.get(`${year}-${month}`) || 0,
+    }));
 
     return successResponse(res, "Stats loaded", {
       total,
@@ -208,6 +261,15 @@ router.get("/stats", protectStudioUser, async (req, res) => {
       active,
       rejected,
       views: viewsAgg[0]?.total || 0,
+      uploadsOverTime,
+      topVideosByViews: topVideosByViews.map((v) => ({
+        title: v.title,
+        views: v.views || 0,
+      })),
+      categoryBreakdown: categoryAgg.map((c) => ({
+        category: c._id,
+        count: c.count,
+      })),
     });
   } catch (error) {
     return errorResponse(res, error.message, 500);

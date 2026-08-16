@@ -22,6 +22,9 @@ import {
   FaAd,
   FaChartLine,
   FaBroadcastTower,
+  FaLock,
+  FaUserLock,
+  FaListUl,
 } from "react-icons/fa";
 import { IoFootstepsOutline } from "react-icons/io5";
 import { GrUserAdmin } from "react-icons/gr";
@@ -42,6 +45,7 @@ const Sidebar = () => {
   const [usersOpen, setUsersOpen] = useState(false);
   const [contentOpen, setContentOpen] = useState(false);
   const [siteOpen, setSiteOpen] = useState(false);
+  const [privateContentOpen, setPrivateContentOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
 
   const adminRole = admin?.role === "mother" ? "mother" : "sub";
@@ -130,6 +134,36 @@ const Sidebar = () => {
         to: "/all-users",
         icon: <FaUsers />,
         text: "Studio Users",
+      },
+      {
+        key: "private-user",
+        to: "/private-user",
+        icon: <FaUserLock />,
+        text: "Private User",
+      },
+    ],
+    [],
+  );
+
+  const privateContentItems = useMemo(
+    () => [
+      {
+        key: "private-video-playlist",
+        to: "/private-video-playlist",
+        icon: <FaListUl />,
+        text: "Private Video Playlist",
+      },
+      {
+        key: "private-video",
+        to: "/private-video",
+        icon: <FaLock />,
+        text: "Private Video",
+      },
+      {
+        key: "private-playlist-videos",
+        to: "/private-playlist-videos",
+        icon: <FaLock />,
+        text: "Playlist Videos",
       },
     ],
     [],
@@ -254,11 +288,22 @@ const Sidebar = () => {
     [siteItems, permissions, isMother],
   );
 
+  const visiblePrivateContentItems = useMemo(
+    () => privateContentItems.filter((item) => canAccess(item.key)),
+    [privateContentItems, permissions, isMother],
+  );
+
   useEffect(() => {
     if (!visibleUserItems.length) setUsersOpen(false);
     if (!visibleContentItems.length) setContentOpen(false);
     if (!visibleSiteItems.length) setSiteOpen(false);
-  }, [visibleUserItems.length, visibleContentItems.length, visibleSiteItems.length]);
+    if (!visiblePrivateContentItems.length) setPrivateContentOpen(false);
+  }, [
+    visibleUserItems.length,
+    visibleContentItems.length,
+    visibleSiteItems.length,
+    visiblePrivateContentItems.length,
+  ]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -374,6 +419,17 @@ const Sidebar = () => {
                   open={siteOpen}
                   setOpen={setSiteOpen}
                   items={visibleSiteItems}
+                  onClose={() => setOpen(false)}
+                />
+              )}
+
+              {visiblePrivateContentItems.length > 0 && (
+                <DropdownSection
+                  title="Private Content"
+                  icon={<FaLock />}
+                  open={privateContentOpen}
+                  setOpen={setPrivateContentOpen}
+                  items={visiblePrivateContentItems}
                   onClose={() => setOpen(false)}
                 />
               )}

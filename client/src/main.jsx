@@ -11,6 +11,7 @@ import { LanguageProvider } from "./Context/LanguageProvider";
 import { routes } from "./router/router";
 import { store } from "./app/store";
 import { rehydrateAuth } from "./features/auth/authSlice";
+import { rehydrateAuth as rehydratePrivateAuth } from "./features/privateAuth/privateAuthSlice";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const BootstrapAuth = ({ children }) => {
 
   useEffect(() => {
     dispatch(rehydrateAuth());
+    dispatch(rehydratePrivateAuth());
   }, [dispatch]);
 
   return children;

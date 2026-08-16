@@ -32,6 +32,11 @@ const ScheduledLiveTvPlayer = ({ channelId, initialNowPlaying, poster, title, ad
   const videoRef = useRef(null);
   const hideTimer = useRef(null);
   const resyncTimer = useRef(null);
+  // True only while muted because the browser blocked unmuted autoplay
+  // (never for a deliberate mute via the mute button) — lets the
+  // "unmute on first tap anywhere" rescue below know it's safe to
+  // override the mute, without ever fighting a real user choice.
+  const autoMutedRef = useRef(false);
 
   const [nowPlaying, setNowPlaying] = useState(initialNowPlaying || null);
   const [hasStarted, setHasStarted] = useState(false);
@@ -77,6 +82,7 @@ const ScheduledLiveTvPlayer = ({ channelId, initialNowPlaying, poster, title, ad
       } catch {
         video.muted = true;
         setMuted(true);
+        autoMutedRef.current = true;
         video.play().catch(() => {});
       }
     };
@@ -175,8 +181,42 @@ const ScheduledLiveTvPlayer = ({ channelId, initialNowPlaying, poster, title, ad
     if (!video) return;
     video.muted = !video.muted;
     setMuted(video.muted);
+    autoMutedRef.current = false; // this is now a deliberate choice, not the autoplay fallback
     trackAction(video.muted ? "Muted Live TV" : "Unmuted Live TV", title);
   };
+
+  // Browsers block unmuted autoplay before the user has interacted with
+  // the page at all, so a fresh visit (especially mobile landing straight
+  // on Live TV) always starts muted — that's a hard browser policy, not
+  // something playback code can skip. The best available fix: the very
+  // first tap/keypress ANYWHERE on the page counts as user activation, so
+  // grab that moment to unmute automatically instead of requiring the
+  // viewer to specifically find and tap the mute icon.
+  //
+  // Listens for "click" (not "pointerdown") deliberately: if that first
+  // interaction IS the mute button itself, its own onClick (toggleMute)
+  // fires first — since click bubbles from the button up to window — and
+  // already clears autoMutedRef, so this only ever fires as a no-op
+  // rescue for taps elsewhere, never as a second toggle fighting the
+  // button's own click.
+  useEffect(() => {
+    const unmuteOnFirstInteraction = () => {
+      if (!autoMutedRef.current) return;
+      const video = videoRef.current;
+      if (video) {
+        video.muted = false;
+        setMuted(false);
+      }
+      autoMutedRef.current = false;
+    };
+
+    window.addEventListener("click", unmuteOnFirstInteraction);
+    window.addEventListener("keydown", unmuteOnFirstInteraction);
+    return () => {
+      window.removeEventListener("click", unmuteOnFirstInteraction);
+      window.removeEventListener("keydown", unmuteOnFirstInteraction);
+    };
+  }, []);
 
   const toggleFullscreen = () => {
     const el = containerRef.current;
