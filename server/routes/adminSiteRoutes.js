@@ -9,6 +9,11 @@ import {
 } from "../models/HomeSection.js";
 import HeroSlide from "../models/HeroSlide.js";
 import LiveTvChannel from "../models/LiveTvChannel.js";
+import {
+  LIVE_TV_CATEGORIES,
+  parseLiveTvCategories,
+} from "../models/liveTvCategories.js";
+import { LIVE_TV_LIST_LIMIT, findFullListCategory } from "../utils/liveTvList.js";
 
 import upload from "../config/multer.js";
 import { handleUpload } from "../utils/handleUpload.js";
@@ -86,6 +91,58 @@ router.delete("/identity", async (req, res) => {
     if (previousLogo) deleteLocalFile(previousLogo);
 
     return successResponse(res, "Site logo cleared", { identity });
+  } catch (error) {
+    return errorResponse(res, error.message, 500);
+  }
+});
+
+/* =========================
+   Site Favicon (browser tab icon of the client site)
+   Kept on its own upload field/endpoints rather than folded into
+   PUT /identity, so saving a logo or the social links never has to
+   round-trip the favicon file back up with them.
+========================= */
+router.put(
+  "/identity/favicon",
+  handleUpload(upload.single("favicon")),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return errorResponse(res, "A favicon image is required", 400);
+      }
+
+      let identity = await SiteIdentity.findOne();
+      if (!identity) identity = new SiteIdentity({});
+
+      const previousFavicon = identity.favicon;
+      identity.favicon = `/uploads/${req.file.filename}`;
+
+      await identity.save();
+
+      if (previousFavicon) deleteLocalFile(previousFavicon);
+
+      return successResponse(res, "Site favicon updated", { identity });
+    } catch (error) {
+      if (req.file) deleteLocalFile(`/uploads/${req.file.filename}`);
+      return errorResponse(res, error.message, 500);
+    }
+  },
+);
+
+router.delete("/identity/favicon", async (req, res) => {
+  try {
+    const identity = await SiteIdentity.findOne();
+    if (!identity) {
+      return successResponse(res, "Site favicon cleared", { identity: null });
+    }
+
+    const previousFavicon = identity.favicon;
+    identity.favicon = null;
+    await identity.save();
+
+    if (previousFavicon) deleteLocalFile(previousFavicon);
+
+    return successResponse(res, "Site favicon cleared", { identity });
   } catch (error) {
     return errorResponse(res, error.message, 500);
   }
@@ -455,7 +512,13 @@ router.get("/live-tv-source", async (req, res) => {
 router.get("/live-tv-channels", async (req, res) => {
   try {
     const channels = await LiveTvChannel.find().sort({ order: 1, createdAt: 1 });
-    return successResponse(res, "Live TV channels loaded", { channels });
+    // Sent alongside the channels so the admin form's category dropdown is
+    // always in step with the sections the client actually renders.
+    return successResponse(res, "Live TV channels loaded", {
+      channels,
+      categories: LIVE_TV_CATEGORIES,
+      listLimit: LIVE_TV_LIST_LIMIT,
+    });
   } catch (error) {
     return errorResponse(res, error.message, 500);
   }
@@ -466,15 +529,37 @@ router.post(
   handleUpload(upload.single("logo")),
   async (req, res) => {
     try {
-      const { name, streamUrl, homeFeatured } = req.body || {};
+      const { name, streamUrl, homeFeatured, categories, pinned, showOnList } =
+        req.body || {};
 
       if (!name?.trim() || !streamUrl?.trim()) {
         if (req.file) deleteLocalFile(`/uploads/${req.file.filename}`);
         return errorResponse(res, "Name and stream URL are required", 400);
       }
 
+      const parsedCategories = parseLiveTvCategories(categories);
+
+      if (!parsedCategories?.length) {
+        if (req.file) deleteLocalFile(`/uploads/${req.file.filename}`);
+        return errorResponse(res, "Choose at least one category for this channel", 400);
+      }
+
       if (!req.file) {
         return errorResponse(res, "A logo image is required", 400);
+      }
+
+      const onList = showOnList === "true" || showOnList === true;
+
+      if (onList) {
+        const full = await findFullListCategory(parsedCategories);
+        if (full) {
+          deleteLocalFile(`/uploads/${req.file.filename}`);
+          return errorResponse(
+            res,
+            `"${full}" already shows ${LIVE_TV_LIST_LIMIT} channels on the Live TV page — remove one first.`,
+            400,
+          );
+        }
       }
 
       const count = await LiveTvChannel.countDocuments();
@@ -484,6 +569,9 @@ router.post(
         streamUrl: streamUrl.trim(),
         logo: `/uploads/${req.file.filename}`,
         homeFeatured: homeFeatured === "true" || homeFeatured === true,
+        categories: parsedCategories,
+        showOnList: onList,
+        pinned: pinned === "true" || pinned === true,
         order: count,
       });
 
@@ -507,13 +595,47 @@ router.put(
         return errorResponse(res, "Live TV channel not found", 404);
       }
 
-      const { name, streamUrl, homeFeatured } = req.body || {};
+      const { name, streamUrl, homeFeatured, categories, pinned, showOnList } =
+        req.body || {};
       const previousLogo = channel.logo;
+
+      const parsedCategories = parseLiveTvCategories(categories);
+
+      if (typeof categories !== "undefined" && !parsedCategories?.length) {
+        if (req.file) deleteLocalFile(`/uploads/${req.file.filename}`);
+        return errorResponse(res, "Choose at least one category for this channel", 400);
+      }
+
+      const onList =
+        typeof showOnList === "undefined"
+          ? channel.showOnList
+          : showOnList === "true" || showOnList === true;
+
+      if (onList) {
+        const full = await findFullListCategory(
+          parsedCategories || channel.categories,
+          { externalId: channel._id },
+        );
+        if (full) {
+          if (req.file) deleteLocalFile(`/uploads/${req.file.filename}`);
+          return errorResponse(
+            res,
+            `"${full}" already shows ${LIVE_TV_LIST_LIMIT} channels on the Live TV page — remove one first.`,
+            400,
+          );
+        }
+      }
+
+      channel.showOnList = onList;
 
       if (name?.trim()) channel.name = name.trim();
       if (streamUrl?.trim()) channel.streamUrl = streamUrl.trim();
       if (typeof homeFeatured !== "undefined") {
         channel.homeFeatured = homeFeatured === "true" || homeFeatured === true;
+      }
+      if (parsedCategories) channel.categories = parsedCategories;
+      if (typeof pinned !== "undefined") {
+        channel.pinned = pinned === "true" || pinned === true;
       }
       if (req.file) channel.logo = `/uploads/${req.file.filename}`;
 

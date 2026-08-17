@@ -5,8 +5,8 @@ import StaticPage from "../../components/StaticPage/StaticPage";
 const PrivacyPolicy = () => (
   <StaticPage title="Privacy Policy" subtitle="Last updated: 2026">
     <p>
-      This Privacy Policy explains what information O-TV collects, how we use
-      it, and the choices you have. By using O-TV, you agree to the
+      This Privacy Policy explains what information Pipra-TV collects, how we use
+      it, and the choices you have. By using Pipra-TV, you agree to the
       collection and use of information as described here.
     </p>
 
@@ -40,7 +40,7 @@ const PrivacyPolicy = () => (
       <h2 className="text-lg font-bold text-white">2. How We Use Information</h2>
       <p className="mt-2">We use collected information to:</p>
       <ul className="mt-2 list-disc space-y-1 pl-5">
-        <li>Operate, maintain, and improve the O-TV Service.</li>
+        <li>Operate, maintain, and improve the Pipra-TV Service.</li>
         <li>Personalize content and recommendations.</li>
         <li>Process deposits, withdrawals, and account-related requests.</li>
         <li>Detect, prevent, and address fraud, abuse, and security issues.</li>
@@ -51,7 +51,7 @@ const PrivacyPolicy = () => (
     <section>
       <h2 className="text-lg font-bold text-white">3. Cookies &amp; Local Storage</h2>
       <p className="mt-2">
-        O-TV uses cookies and browser local storage to keep you signed in,
+        Pipra-TV uses cookies and browser local storage to keep you signed in,
         remember your preferences, and understand how the Service is used.
         You can control cookies through your browser settings, though some
         features may not function correctly without them.
@@ -90,7 +90,7 @@ const PrivacyPolicy = () => (
     <section>
       <h2 className="text-lg font-bold text-white">7. Children's Privacy</h2>
       <p className="mt-2">
-        O-TV is not directed at children under 13, and we do not knowingly
+        Pipra-TV is not directed at children under 13, and we do not knowingly
         collect personal information from children under that age.
       </p>
     </section>

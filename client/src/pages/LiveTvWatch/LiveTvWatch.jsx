@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router";
 import { Radio } from "lucide-react";
 
@@ -6,6 +6,8 @@ import { api } from "../../api/axios";
 import HlsPlayer from "../../components/HlsPlayer/HlsPlayer";
 import ScheduledLiveTvPlayer from "../../components/ScheduledLiveTvPlayer/ScheduledLiveTvPlayer";
 import PlayerSkeleton from "../../components/Skeletons/PlayerSkeleton";
+import ViewerStats from "../../components/ViewerStats/ViewerStats";
+import { useLiveTvAvailability } from "../../hooks/useLiveTvAvailability";
 
 const LiveTvWatch = () => {
   const { id } = useParams();
@@ -35,6 +37,15 @@ const LiveTvWatch = () => {
     window.scrollTo({ top: 0 });
   }, [id, navigate]);
 
+  // Same rule as the Live TV page — a related channel whose stream is down
+  // is never offered as somewhere to go next.
+  const { isAvailable, markUnavailable } = useLiveTvAvailability(related);
+
+  const visibleRelated = useMemo(
+    () => related.filter(isAvailable),
+    [related, isAvailable],
+  );
+
   if (loading) {
     return <PlayerSkeleton />;
   }
@@ -44,7 +55,7 @@ const LiveTvWatch = () => {
   const base = api.defaults.baseURL;
 
   return (
-    <div className="mx-auto w-full max-w-[1680px] px-4 pb-16 pt-4 text-white sm:px-6 lg:px-10 xl:px-[42px]">
+    <div className="player-frame mx-auto w-full max-w-[1680px] px-4 pb-16 pt-4 text-white sm:px-6 lg:px-10 xl:px-[42px]">
       <div className="pt-5">
         {channel.channelType === "scheduled" ? (
           <ScheduledLiveTvPlayer
@@ -62,22 +73,51 @@ const LiveTvWatch = () => {
             poster={channel.logo ? `${base}${channel.logo}` : undefined}
             title={channel.name}
             adsTarget={{ liveTv: channel._id }}
+            onUnavailable={markUnavailable}
           />
         )}
       </div>
 
-      <h1 className="mt-5 text-2xl font-bold text-white sm:text-3xl">
-        {channel.name}
-      </h1>
+      {/* "Now playing" bar — identical to the one on the Live TV page, so
+          the channel you're watching is identified the same way wherever
+          you opened it from. */}
+      <div className="mt-4 flex items-center gap-3 rounded-2xl border border-[#16d6dc]/25 bg-[#16d6dc]/[0.07] px-4 py-3">
+        <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full border-2 border-[#16d6dc] bg-black">
+          {channel.logo ? (
+            <img
+              src={`${base}${channel.logo}`}
+              alt={channel.name}
+              className="h-full w-full object-cover"
+              draggable={false}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-[#16d6dc]">
+              <Radio className="h-5 w-5" />
+            </div>
+          )}
+        </div>
 
-      {related.length > 0 && (
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-sm font-bold text-white sm:text-base">
+            {channel.name}
+          </h1>
+          <p className="flex items-center gap-1.5 text-[11px] font-semibold text-[#16d6dc]">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#16d6dc]" />
+            Now Playing
+          </p>
+        </div>
+
+        <ViewerStats id={channel._id} />
+      </div>
+
+      {visibleRelated.length > 0 && (
         <div className="mt-10">
           <h2 className="mb-4 text-xl font-semibold text-white">
             Related channels
           </h2>
 
           <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
-            {related.map((item) => (
+            {visibleRelated.map((item) => (
               <Link
                 key={item._id}
                 to={`/live-tv/${item._id}`}

@@ -115,7 +115,7 @@ const Sidebar = () => {
         key: "o-tv",
         to: "/o-tv",
         icon: <FaBroadcastTower />,
-        text: "O-TV",
+        text: "Pipra-TV",
       },
       {
         key: "__mother__",

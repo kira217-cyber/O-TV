@@ -4,9 +4,9 @@ import { FaFacebookF, FaTelegramPlane, FaYoutube } from "react-icons/fa";
 
 import { api } from "../../api/axios";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
+import defaultLogo from "../../assets/pipra-tv-logo.png";
 
-const DEFAULT_FOOTER_LOGO =
-  "https://asset.bioscopelive.com/uploads/images/2025/07/28/images_d6ce912746f794656d087b55ef04100d_goplay_bios.png?w=560";
+const DEFAULT_FOOTER_LOGO = defaultLogo;
 
 const DEFAULT_DOWNLOAD_LINKS = [
   {
@@ -105,12 +105,12 @@ const Footer = () => {
           <div className="flex w-full justify-center md:justify-start">
             <NavLink
               to="/"
-              aria-label="O-TV Home"
+              aria-label="Pipra-TV Home"
               className="inline-flex cursor-pointer items-center"
             >
               <img
                 src={footerLogo}
-                alt="O-TV"
+                alt="Pipra-TV"
                 draggable={false}
                 className="h-auto w-[205px] select-none object-contain sm:w-[235px] lg:w-[270px]"
               />

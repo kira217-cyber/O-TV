@@ -358,7 +358,7 @@ const Home = () => {
       </div>
 
       <p className="mb-6 max-w-3xl text-sm leading-relaxed text-slate-400">
-        A quick, at-a-glance summary of how O-TV is performing — your
+        A quick, at-a-glance summary of how Pipra-TV is performing — your
         audience, your content library, and platform activity, all in one
         place. Revenue is not yet tracked, so that figure remains a preview
         placeholder until payments are wired up.

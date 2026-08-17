@@ -1,6 +1,11 @@
 import express from "express";
 
 import ScheduledLiveTvChannel from "../models/ScheduledLiveTvChannel.js";
+import {
+  LIVE_TV_CATEGORIES,
+  parseLiveTvCategories,
+} from "../models/liveTvCategories.js";
+import { LIVE_TV_LIST_LIMIT, findFullListCategory } from "../utils/liveTvList.js";
 
 import upload from "../config/multer.js";
 import { uploadScheduledVideoSingle } from "../config/multerScheduledLiveTv.js";
@@ -163,14 +168,18 @@ router.get("/upload-progress/:uploadId", (req, res) => {
 });
 
 /* =========================
-   O-TV — the site's own singleton channel. There is only ever one
+   Pipra-TV — the site's own singleton channel. There is only ever one
    document in this collection, so these routes read/upsert/clear it
    directly instead of taking an :id.
 ========================= */
 router.get("/channel", async (req, res) => {
   try {
     const channel = await ScheduledLiveTvChannel.findOne();
-    return successResponse(res, "O-TV channel loaded", { channel: channel || null });
+    return successResponse(res, "Pipra-TV channel loaded", {
+      channel: channel || null,
+      categories: LIVE_TV_CATEGORIES,
+      listLimit: LIVE_TV_LIST_LIMIT,
+    });
   } catch (error) {
     return errorResponse(res, error.message, 500);
   }
@@ -182,7 +191,24 @@ router.put(
   async (req, res) => {
     try {
       let channel = await ScheduledLiveTvChannel.findOne();
-      const { name, allTimeVideos, schedule, homeFeatured } = req.body || {};
+      const {
+        name,
+        allTimeVideos,
+        schedule,
+        homeFeatured,
+        categories,
+        pinned,
+        showOnList,
+      } = req.body || {};
+
+      // Unlike an external channel, Pipra-TV may legitimately have no
+      // category — it always has the pinned row to live in.
+      const parsedCategories = parseLiveTvCategories(categories);
+
+      if (typeof categories !== "undefined" && !parsedCategories) {
+        if (req.file) deleteLocalFile(`/uploads/${req.file.filename}`);
+        return errorResponse(res, "Choose valid categories for this channel", 400);
+      }
 
       if (!channel) {
         if (!name?.trim()) {
@@ -222,6 +248,32 @@ router.put(
       if (typeof homeFeatured !== "undefined") {
         channel.homeFeatured = homeFeatured === "true" || homeFeatured === true;
       }
+      const onList =
+        typeof showOnList === "undefined"
+          ? channel.showOnList
+          : showOnList === "true" || showOnList === true;
+
+      if (onList) {
+        const full = await findFullListCategory(
+          parsedCategories || channel.categories,
+          { scheduled: true },
+        );
+        if (full) {
+          if (req.file) deleteLocalFile(`/uploads/${req.file.filename}`);
+          return errorResponse(
+            res,
+            `"${full}" already shows ${LIVE_TV_LIST_LIMIT} channels on the Live TV page — remove one first.`,
+            400,
+          );
+        }
+      }
+
+      channel.showOnList = onList;
+
+      if (parsedCategories) channel.categories = parsedCategories;
+      if (typeof pinned !== "undefined") {
+        channel.pinned = pinned === "true" || pinned === true;
+      }
       if (req.file) channel.logo = `/uploads/${req.file.filename}`;
 
       await channel.save();
@@ -233,7 +285,7 @@ router.put(
         if (!currentFileNames.has(fileName)) deleteFromBunny(fileName).catch(() => {});
       }
 
-      return successResponse(res, "O-TV channel saved", { channel });
+      return successResponse(res, "Pipra-TV channel saved", { channel });
     } catch (error) {
       if (req.file) deleteLocalFile(`/uploads/${req.file.filename}`);
       return errorResponse(res, error.message, 500);
@@ -245,14 +297,14 @@ router.delete("/channel", async (req, res) => {
   try {
     const channel = await ScheduledLiveTvChannel.findOneAndDelete();
 
-    if (!channel) return errorResponse(res, "O-TV channel not found", 404);
+    if (!channel) return errorResponse(res, "Pipra-TV channel not found", 404);
 
     deleteLocalFile(channel.logo);
     for (const fileName of referencedFileNames(channel)) {
       deleteFromBunny(fileName).catch(() => {});
     }
 
-    return successResponse(res, "O-TV channel reset");
+    return successResponse(res, "Pipra-TV channel reset");
   } catch (error) {
     return errorResponse(res, error.message, 500);
   }

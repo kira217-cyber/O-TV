@@ -7,9 +7,14 @@ import BottomNavbar from "../components/BottomNavbar/BottomNavbar";
 import Slider from "../components/Slider/Slider";
 import LiveTvMobileHeader from "../components/LiveTvMobileHeader/LiveTvMobileHeader";
 import { getPresenceSocket } from "../hooks/presenceSocket";
+import { useSiteFavicon } from "../hooks/useSiteFavicon";
 
 const RootLayout = () => {
   const location = useLocation();
+
+  // Browser-tab icon comes from admin → Site Identify → Site Favicon.
+  // Called before the early returns below so every layout branch gets it.
+  useSiteFavicon();
 
   // Reports "currently browsing <path>" to the live Site Analytics
   // dashboard in admin — connects the shared socket immediately (not just

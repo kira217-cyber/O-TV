@@ -30,7 +30,7 @@ const AdsImage2 = () => {
         >
           <img
             src={adsImageUrl}
-            alt="O-TV advertisement"
+            alt="Pipra-TV advertisement"
             draggable={false}
             loading="lazy"
             className="block h-full w-full select-none object-cover object-center transition-transform duration-500 group-hover:scale-[1.01] sm:h-auto"

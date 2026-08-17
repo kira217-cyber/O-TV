@@ -3,9 +3,9 @@ import { useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import { Home, ArrowLeft, Search } from "lucide-react";
 import { useLanguage } from "../../Context/LanguageProvider";
+import defaultLogo from "../../assets/pipra-tv-logo.png";
 
-const LOGO_URL =
-  "https://asset.bioscopelive.com/uploads/images/2025/07/28/images_d6ce912746f794656d087b55ef04100d_goplay_bios.png?w=560";
+const LOGO_URL = defaultLogo;
 
 const NotFoundPage = () => {
   const navigate = useNavigate();
@@ -24,8 +24,8 @@ const NotFoundPage = () => {
         ? "টিপস: নেভবারের সার্চ আইকন থেকে মুভি বা শো খুঁজে দেখুন।"
         : "Tip: Use the search icon in the navbar to find movies or shows.",
       copyright: isBangla
-        ? `© ${new Date().getFullYear()} O-TV — সর্বস্বত্ব সংরক্ষিত।`
-        : `© ${new Date().getFullYear()} O-TV — All rights reserved.`,
+        ? `© ${new Date().getFullYear()} Pipra-TV — সর্বস্বত্ব সংরক্ষিত।`
+        : `© ${new Date().getFullYear()} Pipra-TV — All rights reserved.`,
     };
   }, [isBangla]);
 
@@ -46,7 +46,7 @@ const NotFoundPage = () => {
         >
           <img
             src={LOGO_URL}
-            alt="O-TV"
+            alt="Pipra-TV"
             draggable={false}
             className="h-auto w-[150px] select-none object-contain"
           />

@@ -12,6 +12,7 @@ import PrivateRoute from "../PrivateRoute/PrivateRoute";
 import CreatorChannels from "../pages/CreatorChannels/CreatorChannels";
 import LiveTvPage from "../pages/LiveTvPage/LiveTvPage";
 import LiveTvWatch from "../pages/LiveTvWatch/LiveTvWatch";
+import LiveTvCategory from "../pages/LiveTvCategory/LiveTvCategory";
 import Movies from "../pages/Movies/Movies";
 import Natok from "../pages/Natok/Natok";
 import Sports from "../pages/Sports/Sports";
@@ -52,6 +53,11 @@ export const routes = createBrowserRouter([
       {
         path: "live-tv",
         element: <LiveTvPage />,
+      },
+      {
+        // Three segments, so this never collides with "live-tv/:id".
+        path: "live-tv/category/:key",
+        element: <LiveTvCategory />,
       },
       {
         path: "live-tv/:id",

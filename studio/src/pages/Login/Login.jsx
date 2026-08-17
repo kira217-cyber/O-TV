@@ -134,7 +134,7 @@ const Login = () => {
 
           <p className="mt-3 text-sm leading-relaxed text-slate-300">
             Log back in to manage your uploads, check approval status, and
-            keep growing your audience on O-TV.
+            keep growing your audience on Pipra-TV.
           </p>
         </motion.div>
       </div>
@@ -151,7 +151,7 @@ const Login = () => {
         >
           <div className="mb-6 text-center lg:text-left">
             <h1 className="bg-gradient-to-r from-[#fde68a] via-[#f59e0b] to-[#b45309] bg-clip-text text-3xl font-black text-transparent md:text-4xl">
-              O-TV Studio Login
+              Pipra-TV Studio Login
             </h1>
 
             <p className="mt-2 text-sm text-slate-300">
@@ -173,7 +173,7 @@ const Login = () => {
                     name="identifier"
                     value={formData.identifier}
                     onChange={handleChange}
-                    placeholder="creator@o-tv.live or 01700000000"
+                    placeholder="creator@pipratv.com or 01700000000"
                     className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
                   />
                 </div>
@@ -230,7 +230,7 @@ const Login = () => {
             </form>
 
             <p className="mt-6 text-center text-sm text-slate-300">
-              New to O-TV Studio?{" "}
+              New to Pipra-TV Studio?{" "}
               <NavLink
                 to="/register"
                 className="cursor-pointer font-bold text-[#fbbf24] hover:text-[#fde68a]"

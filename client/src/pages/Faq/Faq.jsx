@@ -2,8 +2,8 @@ import React from "react";
 
 const FAQ_ITEMS = [
   {
-    q: "What is O-TV?",
-    a: "O-TV is a streaming platform for movies, natok, sports, Live TV channels, and short-form videos, along with content from independent creators through Creator Channels.",
+    q: "What is Pipra-TV?",
+    a: "Pipra-TV is a streaming platform for movies, natok, sports, Live TV channels, and short-form videos, along with content from independent creators through Creator Channels.",
   },
   {
     q: "Do I need an account to watch content?",
@@ -15,18 +15,18 @@ const FAQ_ITEMS = [
   },
   {
     q: "How does Creator Channels work?",
-    a: "Creator Channels lets independent studios and creators upload their own videos to O-TV. Uploaded videos are reviewed before going live. Visit the Creator Channels page to browse all channels on the platform.",
+    a: "Creator Channels lets independent studios and creators upload their own videos to Pipra-TV. Uploaded videos are reviewed before going live. Visit the Creator Channels page to browse all channels on the platform.",
   },
   {
     q: "Why do I see ads while watching?",
-    a: "O-TV shows occasional in-player video or image ads to help keep the platform free to use. Video ads can be skipped after a few seconds, and image ads never interrupt playback.",
+    a: "Pipra-TV shows occasional in-player video or image ads to help keep the platform free to use. Video ads can be skipped after a few seconds, and image ads never interrupt playback.",
   },
   {
     q: "I found a bug or have a suggestion — where do I report it?",
-    a: "Please use the Feedback page to let us know. We review all submissions and use them to improve O-TV.",
+    a: "Please use the Feedback page to let us know. We review all submissions and use them to improve Pipra-TV.",
   },
   {
-    q: "How can I become a creator on O-TV?",
+    q: "How can I become a creator on Pipra-TV?",
     a: "Register for a Studio/Creator account, set up your channel, and start uploading. Each video goes through a quick review before it's published.",
   },
 ];
@@ -37,7 +37,7 @@ const Faq = () => (
       Frequently Asked Questions
     </h1>
     <p className="mt-2 text-sm text-slate-400">
-      Answers to common questions about using O-TV.
+      Answers to common questions about using Pipra-TV.
     </p>
 
     <div className="mt-8 space-y-3">

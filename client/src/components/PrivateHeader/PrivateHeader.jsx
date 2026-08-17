@@ -3,7 +3,7 @@ import { Lock, LogOut } from "lucide-react";
 
 // Shared top bar for the whole private-video section (/private-video,
 // /private-user-login) — deliberately its own small brand mark, not the
-// site's Navber, since this section intentionally has no O-TV chrome
+// site's Navber, since this section intentionally has no Pipra-TV chrome
 // around it (see RootLayout's isPrivatePage branch).
 const PrivateHeader = ({ userEmail, onLogout }) => (
   <header className="sticky top-0 z-30 border-b border-[#16d6dc]/15 bg-[#0b0f10]/95 backdrop-blur-md">

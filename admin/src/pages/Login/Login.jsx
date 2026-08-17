@@ -116,7 +116,7 @@ const Login = () => {
             </div>
 
             <h1 className="bg-gradient-to-r from-[#c4b5fd] via-[#8b5cf6] to-[#a855f7] bg-clip-text text-3xl font-black text-transparent md:text-4xl">
-              O-TV Admin
+              Pipra-TV Admin
             </h1>
 
             <p className="mt-2 text-sm text-slate-300">
@@ -151,7 +151,7 @@ const Login = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="admin@o-tv.live"
+                    placeholder="admin@pipratv.com"
                     className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
                   />
                 </div>
@@ -211,7 +211,7 @@ const Login = () => {
           </div>
 
           <p className="mt-5 text-center text-xs text-slate-500">
-            O-TV Admin Secure Control System
+            Pipra-TV Admin Secure Control System
           </p>
         </motion.div>
       </div>

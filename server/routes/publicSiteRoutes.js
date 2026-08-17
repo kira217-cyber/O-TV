@@ -10,6 +10,7 @@ import Video, { CATEGORY_OPTIONS } from "../models/Video.js";
 import StudioUser from "../models/StudioUser.js";
 import LiveTvChannel from "../models/LiveTvChannel.js";
 import ScheduledLiveTvChannel from "../models/ScheduledLiveTvChannel.js";
+import { LIVE_TV_CATEGORIES } from "../models/liveTvCategories.js";
 import AdCampaign from "../models/AdCampaign.js";
 
 import { successResponse, errorResponse } from "../utils/response.js";
@@ -40,7 +41,7 @@ const summarizePromotedVideo = (video, studioUser) => ({
   duration: video.duration,
   category: video.category,
   maturityRating: video.maturityRating,
-  channelName: studioUser?.channel?.name || studioUser?.fullName || "O-TV Studio",
+  channelName: studioUser?.channel?.name || studioUser?.fullName || "Pipra-TV Studio",
   video: video.video,
 });
 
@@ -126,6 +127,7 @@ router.get("/settings", async (req, res) => {
 
     return successResponse(res, "Site settings loaded", {
       logo: identity?.logo || null,
+      favicon: identity?.favicon || null,
       socialLinks: {
         facebook: identity?.socialLinks?.facebook || "",
         youtube: identity?.socialLinks?.youtube || "",
@@ -387,7 +389,7 @@ const withChannelType = (doc, channelType) => ({
   channelType,
 });
 
-// O-TV (channelType "scheduled" — there's only ever one) always leads
+// Pipra-TV (channelType "scheduled" — there's only ever one) always leads
 // every merged channel list, ahead of every external channel regardless
 // of `order`/`createdAt`; external channels are then sorted amongst
 // themselves as before.
@@ -411,7 +413,7 @@ const findAnyChannelById = async (id) => {
 
 // Full Live TV directory — every managed channel (not just the
 // home-featured ones already in the /settings bundle), paginated 48/page.
-// For a "scheduled" channel (O-TV), figures out which video should be
+// For a "scheduled" channel (Pipra-TV), figures out which video should be
 // playing right now and at what offset — either a scheduled slot, or
 // (falling back) whichever video the endless "all time" pool loop is
 // currently on. Returns null for "external" channels (they just play
@@ -451,7 +453,11 @@ router.get("/live-tv", async (req, res) => {
     }
 
     const page = Math.max(1, parseInt(pageQuery, 10) || 1);
-    const limit = Math.max(1, Math.min(100, parseInt(limitQuery, 10) || 48));
+    // The Live TV page renders every channel at once, grouped into category
+    // sections, so it asks for the whole list in one go — a category split
+    // across pages would make no sense. The cap stays high rather than
+    // unbounded so a runaway request can't pull the entire collection.
+    const limit = Math.max(1, Math.min(500, parseInt(limitQuery, 10) || 48));
 
     const [externalChannels, scheduledChannels] = await Promise.all([
       LiveTvChannel.find(filter),
@@ -468,6 +474,7 @@ router.get("/live-tv", async (req, res) => {
 
     return successResponse(res, "Live TV channels loaded", {
       channels,
+      categories: LIVE_TV_CATEGORIES,
       total,
       page,
       totalPages: Math.max(1, Math.ceil(total / limit)),

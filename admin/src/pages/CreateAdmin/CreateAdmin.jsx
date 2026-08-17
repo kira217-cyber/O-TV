@@ -44,7 +44,7 @@ const CreateAdmin = () => {
         label: "Site Analytics",
         path: "/site-analytics",
       },
-      { key: "o-tv", label: "O-TV", path: "/o-tv" },
+      { key: "o-tv", label: "Pipra-TV", path: "/o-tv" },
 
       {
         key: "content-hollywood",
@@ -338,7 +338,7 @@ const CreateAdmin = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@o-tv.live"
+                  placeholder="admin@pipratv.com"
                   className="w-full rounded-2xl border border-[#8b5cf6]/20 bg-black/35 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 transition focus:border-[#8b5cf6]/70 focus:ring-2 focus:ring-[#8b5cf6]/20"
                   required
                 />

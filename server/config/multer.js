@@ -16,6 +16,9 @@ const ALLOWED_MIME_TYPES = [
   "image/jpeg",
   "image/webp",
   "image/gif",
+  // .ico files, so a classic favicon can be uploaded from Site Identify too
+  "image/x-icon",
+  "image/vnd.microsoft.icon",
 ];
 
 const fileFilter = (req, file, cb) => {

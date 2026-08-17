@@ -1,1 +1,41 @@
 @import "tailwindcss";
+
+/*
+ * Content column for the pages built around a player (Live TV, a Live TV
+ * channel, a video). Desktop only — mobile and tablet keep the full width
+ * they always had. From 1024px up the whole column (player, titles, and
+ * the "All Channels" / "More from this channel" grids under it) is
+ * narrowed to exactly the width of the home page hero Slider's centre
+ * (active) slide, so nothing on the page is wider than the player.
+ *
+ * These two breakpoints mirror the desktop `.bioscope-slide` rules in
+ * Slider.jsx one-for-one; if the slider's widths change, change these
+ * with them. The page's own horizontal padding is dropped at the same
+ * point, so the column measures the slider's width edge to edge rather
+ * than the slider's width minus padding.
+ *
+ * These rules sit outside Tailwind's layers on purpose: unlayered CSS
+ * outranks layered CSS, so they win over the `lg:px-10`/`xl:px-[42px]`
+ * utilities on the same element without needing !important.
+ *
+ * No height is set — the players stay 16:9 (`aspect-video`), so their
+ * height simply follows from the width.
+ */
+.player-frame {
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .player-frame {
+    width: min(100%, 60vw);
+    margin-inline: auto;
+    padding-inline: 0;
+  }
+}
+
+@media (min-width: 1536px) {
+  .player-frame {
+    width: min(100%, 59.7vw);
+    max-width: 1146px;
+  }
+}

@@ -6,10 +6,12 @@ import { FaFacebookF, FaTelegramPlane, FaYoutube } from "react-icons/fa";
 import { api } from "../../api/axios";
 
 const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+const FAVICON_TYPES = [...IMAGE_TYPES, "image/x-icon", "image/vnd.microsoft.icon"];
 const MAX_SIZE = 20 * 1024 * 1024;
 
 const SiteIdentify = () => {
   const inputRef = useRef(null);
+  const faviconInputRef = useRef(null);
 
   const [logo, setLogo] = useState(null);
   const [file, setFile] = useState(null);
@@ -17,6 +19,12 @@ const SiteIdentify = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [clearing, setClearing] = useState(false);
+
+  const [favicon, setFavicon] = useState(null);
+  const [faviconFile, setFaviconFile] = useState(null);
+  const [faviconPreview, setFaviconPreview] = useState(null);
+  const [savingFavicon, setSavingFavicon] = useState(false);
+  const [clearingFavicon, setClearingFavicon] = useState(false);
 
   const [facebook, setFacebook] = useState("");
   const [youtube, setYoutube] = useState("");
@@ -29,6 +37,7 @@ const SiteIdentify = () => {
       const { data } = await api.get("/api/admin/site/identity");
       const identity = data?.data?.identity;
       setLogo(identity?.logo || null);
+      setFavicon(identity?.favicon || null);
       setFacebook(identity?.socialLinks?.facebook || "");
       setYoutube(identity?.socialLinks?.youtube || "");
       setTelegram(identity?.socialLinks?.telegram || "");
@@ -107,6 +116,72 @@ const SiteIdentify = () => {
     }
   };
 
+  const handleFaviconChange = (e) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+
+    const isIco = /\.ico$/i.test(selected.name);
+
+    if (!FAVICON_TYPES.includes(selected.type) && !isIco) {
+      toast.error("Favicon must be PNG, ICO, JPG, JPEG, WEBP, or GIF");
+      e.target.value = "";
+      return;
+    }
+
+    if (selected.size > MAX_SIZE) {
+      toast.error("Favicon must be 20MB or smaller");
+      e.target.value = "";
+      return;
+    }
+
+    setFaviconFile(selected);
+    setFaviconPreview(URL.createObjectURL(selected));
+  };
+
+  const handleSaveFavicon = async () => {
+    if (!faviconFile) {
+      toast.error("Choose a favicon image first");
+      return;
+    }
+
+    try {
+      setSavingFavicon(true);
+
+      const formData = new FormData();
+      formData.append("favicon", faviconFile);
+
+      const { data } = await api.put("/api/admin/site/identity/favicon", formData);
+
+      setFavicon(data?.data?.identity?.favicon || null);
+      setFaviconFile(null);
+      setFaviconPreview(null);
+      toast.success("Favicon updated — now live on the client site's browser tab");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to update favicon");
+    } finally {
+      setSavingFavicon(false);
+    }
+  };
+
+  const handleClearFavicon = async () => {
+    if (!window.confirm("Remove the custom favicon and revert to the default?")) {
+      return;
+    }
+
+    try {
+      setClearingFavicon(true);
+      await api.delete("/api/admin/site/identity/favicon");
+      setFavicon(null);
+      setFaviconFile(null);
+      setFaviconPreview(null);
+      toast.success("Custom favicon removed — default favicon restored");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to clear favicon");
+    } finally {
+      setClearingFavicon(false);
+    }
+  };
+
   const handleSaveSocial = async () => {
     try {
       setSavingSocial(true);
@@ -131,6 +206,8 @@ const SiteIdentify = () => {
   };
 
   const displayedPreview = preview || (logo ? `${api.defaults.baseURL}${logo}` : null);
+  const displayedFavicon =
+    faviconPreview || (favicon ? `${api.defaults.baseURL}${favicon}` : null);
 
   return (
     <div className="mx-auto max-w-7xl text-white">
@@ -139,7 +216,8 @@ const SiteIdentify = () => {
           Site Identify
         </h1>
         <p className="mt-2 text-sm text-slate-300">
-          The site logo shown on both the Navbar and Footer of the client site.
+          The site logo shown on both the Navbar and Footer of the client site,
+          plus the favicon shown in the browser tab.
         </p>
       </div>
 
@@ -171,7 +249,7 @@ const SiteIdentify = () => {
                 />
               ) : (
                 <span className="text-xs text-slate-500">
-                  No custom logo set — default O-TV logo is shown
+                  No custom logo set — default Pipra-TV logo is shown
                 </span>
               )}
             </div>
@@ -213,6 +291,84 @@ const SiteIdentify = () => {
                 >
                   <Trash2 className="h-4 w-4" />
                   {clearing ? "Removing..." : "Remove Logo"}
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="mt-8 max-w-2xl rounded-[28px] border border-[#8b5cf6]/20 bg-white/[0.06] p-6 shadow-2xl shadow-black/40 backdrop-blur-xl md:p-8">
+        <label className="mb-2 block text-sm font-semibold text-slate-200">
+          Site Favicon
+        </label>
+
+        <div className="mb-4 flex items-start gap-2 rounded-2xl border border-[#8b5cf6]/15 bg-[#8b5cf6]/5 px-4 py-3 text-xs leading-relaxed text-slate-300">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#8b5cf6]" />
+          <span>
+            The small icon shown in the browser tab of the client site.
+            Recommended a square{" "}
+            <span className="font-bold text-white">512×512px</span> PNG (or a
+            .ico file). Max file size:{" "}
+            <span className="font-bold text-white">20MB</span>.
+          </span>
+        </div>
+
+        {loading ? (
+          <div className="py-10 text-center text-slate-400">Loading...</div>
+        ) : (
+          <>
+            <div className="mb-4 flex h-28 w-full items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-[#8b5cf6]/25 bg-black/30">
+              {displayedFavicon ? (
+                <img
+                  src={displayedFavicon}
+                  alt="Site favicon preview"
+                  className="h-16 w-16 rounded-lg object-contain"
+                />
+              ) : (
+                <span className="text-xs text-slate-500">
+                  No custom favicon set — default Pipra-TV favicon is shown
+                </span>
+              )}
+            </div>
+
+            <input
+              ref={faviconInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif,image/x-icon,.ico"
+              onChange={handleFaviconChange}
+              className="hidden"
+            />
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => faviconInputRef.current?.click()}
+                className="flex cursor-pointer items-center gap-2 rounded-2xl border border-[#8b5cf6]/25 bg-[#8b5cf6]/10 px-5 py-3 text-sm font-bold text-violet-200 transition hover:bg-[#8b5cf6]/20"
+              >
+                <ImageUp className="h-4 w-4" />
+                {favicon ? "Replace Favicon" : "Choose Favicon"}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveFavicon}
+                disabled={!faviconFile || savingFavicon}
+                className="flex cursor-pointer items-center gap-2 rounded-2xl bg-gradient-to-r from-[#c4b5fd] via-[#8b5cf6] to-[#4338ca] px-5 py-3 text-sm font-black text-white shadow-lg shadow-[#8b5cf6]/30 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Save className="h-4 w-4" />
+                {savingFavicon ? "Saving..." : "Save Favicon"}
+              </button>
+
+              {favicon && (
+                <button
+                  type="button"
+                  onClick={handleClearFavicon}
+                  disabled={clearingFavicon}
+                  className="flex cursor-pointer items-center gap-2 rounded-2xl bg-rose-500/15 px-5 py-3 text-sm font-bold text-rose-300 transition hover:bg-rose-500/25 disabled:opacity-60"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {clearingFavicon ? "Removing..." : "Remove Favicon"}
                 </button>
               )}
             </div>

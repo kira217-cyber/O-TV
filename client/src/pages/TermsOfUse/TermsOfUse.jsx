@@ -5,17 +5,17 @@ import StaticPage from "../../components/StaticPage/StaticPage";
 const TermsOfUse = () => (
   <StaticPage title="Terms of Use" subtitle="Last updated: 2026">
     <p>
-      Welcome to O-TV. These Terms of Use ("Terms") govern your access to and
-      use of the O-TV website, mobile experience, and all related services
+      Welcome to Pipra-TV. These Terms of Use ("Terms") govern your access to and
+      use of the Pipra-TV website, mobile experience, and all related services
       (collectively, the "Service"). By creating an account, browsing, or
-      streaming any content on O-TV, you agree to be bound by these Terms. If
+      streaming any content on Pipra-TV, you agree to be bound by these Terms. If
       you do not agree, please do not use the Service.
     </p>
 
     <section>
       <h2 className="text-lg font-bold text-white">1. The Service</h2>
       <p className="mt-2">
-        O-TV is a video streaming platform that hosts movies, natok, sports
+        Pipra-TV is a video streaming platform that hosts movies, natok, sports
         content, Live TV channels, and short-form videos, along with content
         uploaded by independent creators through Creator Channels. Content
         availability may change over time and may vary based on your account
@@ -36,10 +36,10 @@ const TermsOfUse = () => (
     <section>
       <h2 className="text-lg font-bold text-white">3. Creator Channels</h2>
       <p className="mt-2">
-        Studio/creator accounts may upload videos for publication on O-TV.
+        Studio/creator accounts may upload videos for publication on Pipra-TV.
         Uploaded content is reviewed before it becomes publicly visible.
         Creators are solely responsible for ensuring they have the rights to
-        any content they upload, and O-TV may reject, remove, or suspend
+        any content they upload, and Pipra-TV may reject, remove, or suspend
         content that violates these Terms or applicable law.
       </p>
     </section>
@@ -51,7 +51,7 @@ const TermsOfUse = () => (
         <li>Upload or share content you do not have the rights to distribute.</li>
         <li>Use the Service for any unlawful, harmful, or abusive purpose.</li>
         <li>Attempt to circumvent any access, security, or content-protection measures.</li>
-        <li>Scrape, copy, or redistribute O-TV content without permission.</li>
+        <li>Scrape, copy, or redistribute Pipra-TV content without permission.</li>
         <li>Interfere with the normal operation of the Service for other users.</li>
       </ul>
     </section>
@@ -59,9 +59,9 @@ const TermsOfUse = () => (
     <section>
       <h2 className="text-lg font-bold text-white">5. Advertising</h2>
       <p className="mt-2">
-        O-TV may display in-player advertising (video or image overlays)
+        Pipra-TV may display in-player advertising (video or image overlays)
         during video and Live TV playback as part of how the Service is
-        funded. Ad content is reviewed by our team, but O-TV is not
+        funded. Ad content is reviewed by our team, but Pipra-TV is not
         responsible for the content of third-party websites linked from
         advertisements.
       </p>
@@ -70,9 +70,9 @@ const TermsOfUse = () => (
     <section>
       <h2 className="text-lg font-bold text-white">6. Intellectual Property</h2>
       <p className="mt-2">
-        All O-TV branding, design, and platform software is the property of
-        O-TV. Content uploaded by creators remains the property of the
-        respective rights holders and is made available on O-TV under
+        All Pipra-TV branding, design, and platform software is the property of
+        Pipra-TV. Content uploaded by creators remains the property of the
+        respective rights holders and is made available on Pipra-TV under
         license for streaming purposes only.
       </p>
     </section>

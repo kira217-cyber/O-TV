@@ -113,7 +113,7 @@ const MyChannel = () => {
           <p className="mt-1 text-sm text-slate-400">
             {channel
               ? "Manage your channel's name and logo."
-              : "Create your channel to start building your presence on O-TV."}
+              : "Create your channel to start building your presence on Pipra-TV."}
           </p>
         </div>
       </div>
@@ -150,7 +150,7 @@ const MyChannel = () => {
               Use a square image, ideally{" "}
               <span className="font-bold text-white">500×500px</span>, for
               the best fit in circular channel logos — like the channel
-              logos shown on the O-TV client site. Max file size:{" "}
+              logos shown on the Pipra-TV client site. Max file size:{" "}
               <span className="font-bold text-white">20MB</span>. Supported
               formats:{" "}
               <span className="font-bold text-white">

@@ -113,7 +113,7 @@ const Videos = () => {
           </h1>
 
           <p className="mt-2 text-sm text-slate-300">
-            Review videos uploaded by O-TV Studio creators.
+            Review videos uploaded by Pipra-TV Studio creators.
             {total > 0 && (
               <span className="ml-1 text-slate-400">({total} total)</span>
             )}

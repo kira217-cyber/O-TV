@@ -43,6 +43,7 @@ const ScheduledLiveTvPlayer = ({ channelId, initialNowPlaying, poster, title, ad
   const [playing, setPlaying] = useState(false);
   const [buffering, setBuffering] = useState(true);
   const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
   const [fullscreen, setFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [error, setError] = useState(false);
@@ -185,6 +186,20 @@ const ScheduledLiveTvPlayer = ({ channelId, initialNowPlaying, poster, title, ad
     trackAction(video.muted ? "Muted Live TV" : "Unmuted Live TV", title);
   };
 
+  const handleVolume = (e) => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const value = Number(e.target.value);
+    video.volume = value;
+    video.muted = value === 0;
+    setVolume(value);
+    setMuted(value === 0);
+    // Dragging the slider is a deliberate choice too, so the autoplay
+    // rescue below must not override it either.
+    autoMutedRef.current = false;
+  };
+
   // Browsers block unmuted autoplay before the user has interacted with
   // the page at all, so a fresh visit (especially mobile landing straight
   // on Live TV) always starts muted — that's a hard browser policy, not
@@ -242,7 +257,10 @@ const ScheduledLiveTvPlayer = ({ channelId, initialNowPlaying, poster, title, ad
     const video = videoRef.current;
     if (!video) return undefined;
 
-    const onVolumeChange = () => setMuted(video.muted);
+    const onVolumeChange = () => {
+      setMuted(video.muted);
+      setVolume(video.volume);
+    };
     video.addEventListener("volumechange", onVolumeChange);
     return () => video.removeEventListener("volumechange", onVolumeChange);
   }, []);
@@ -362,17 +380,30 @@ const ScheduledLiveTvPlayer = ({ channelId, initialNowPlaying, poster, title, ad
               )}
             </button>
 
-            <button
-              type="button"
-              onClick={toggleMute}
-              className="cursor-pointer text-white transition hover:text-[#16d6dc]"
-            >
-              {muted ? (
-                <VolumeX className="h-5 w-5" />
-              ) : (
-                <Volume2 className="h-5 w-5" />
-              )}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleMute}
+                className="cursor-pointer text-white transition hover:text-[#16d6dc]"
+              >
+                {muted || volume === 0 ? (
+                  <VolumeX className="h-5 w-5" />
+                ) : (
+                  <Volume2 className="h-5 w-5" />
+                )}
+              </button>
+
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={muted ? 0 : volume}
+                onChange={handleVolume}
+                aria-label="Volume"
+                className="hidden h-1 w-20 cursor-pointer appearance-none rounded-full bg-white/25 accent-[#16d6dc] sm:block"
+              />
+            </div>
           </div>
 
           <button

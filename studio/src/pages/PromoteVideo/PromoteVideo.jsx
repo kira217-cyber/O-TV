@@ -154,7 +154,7 @@ const PromoteVideo = () => {
         </h1>
 
         <p className="mt-2 text-sm text-slate-300">
-          Ask admin to feature one of your approved videos on the O-TV home
+          Ask admin to feature one of your approved videos on the Pipra-TV home
           page for a limited time.
         </p>
       </div>

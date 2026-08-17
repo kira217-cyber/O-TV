@@ -108,7 +108,7 @@ const Sidebar = () => {
                     STUDIO
                   </h2>
                   <p className="text-sm text-amber-200/80 font-medium">
-                    O-TV Creator Panel
+                    Pipra-TV Creator Panel
                   </p>
                 </div>
               </div>

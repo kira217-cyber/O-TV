@@ -118,7 +118,7 @@ const MyVideos = () => {
             My Videos
           </h1>
           <p className="mt-1 text-sm text-slate-400">
-            Track the status of everything you've uploaded to O-TV.
+            Track the status of everything you've uploaded to Pipra-TV.
             {total > 0 && (
               <span className="ml-1 text-slate-500">({total} total)</span>
             )}

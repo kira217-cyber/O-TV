@@ -34,7 +34,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("uploads"));
 
 app.get("/", (req, res) => {
-  res.send("O-TV server is running");
+  res.send("Pipra-TV server is running");
 });
 
 app.use("/api/admin", adminRoutes);

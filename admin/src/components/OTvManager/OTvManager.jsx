@@ -209,8 +209,13 @@ const OTvManager = () => {
   const [channel, setChannel] = useState(null);
 
   // Identity panel state
-  const [name, setName] = useState("O-TV");
+  const [name, setName] = useState("Pipra-TV");
   const [homeFeatured, setHomeFeatured] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [listLimit, setListLimit] = useState(10);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [showOnList, setShowOnList] = useState(false);
+  const [pinned, setPinned] = useState(false);
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [savingIdentity, setSavingIdentity] = useState(false);
@@ -232,10 +237,15 @@ const OTvManager = () => {
       const { data } = await api.get("/api/admin/scheduled-live-tv/channel");
       const loaded = data?.data?.channel || null;
       setChannel(loaded);
+      setCategories(data?.data?.categories || []);
+      setListLimit(data?.data?.listLimit || 10);
 
       if (loaded) {
         setName(loaded.name);
         setHomeFeatured(Boolean(loaded.homeFeatured));
+        setSelectedCategories(loaded.categories || []);
+        setShowOnList(Boolean(loaded.showOnList));
+        setPinned(Boolean(loaded.pinned));
         setAllTimeVideos(
           (loaded.allTimeVideos || []).map((entry, index) => ({
             key: `${entry.video?.fileName || index}`,
@@ -254,7 +264,7 @@ const OTvManager = () => {
         );
       }
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to load the O-TV channel");
+      toast.error(error?.response?.data?.message || "Failed to load the Pipra-TV channel");
     } finally {
       setLoading(false);
     }
@@ -300,15 +310,18 @@ const OTvManager = () => {
       const formData = new FormData();
       formData.append("name", name.trim());
       formData.append("homeFeatured", String(homeFeatured));
+      formData.append("categories", JSON.stringify(selectedCategories));
+      formData.append("showOnList", String(showOnList));
+      formData.append("pinned", String(pinned));
       if (logoFile) formData.append("logo", logoFile);
 
       const { data } = await api.put("/api/admin/scheduled-live-tv/channel", formData);
       setChannel(data?.data?.channel || null);
       setLogoFile(null);
       setLogoPreview(null);
-      toast.success("O-TV identity saved");
+      toast.success("Pipra-TV identity saved");
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to save O-TV identity");
+      toast.error(error?.response?.data?.message || "Failed to save Pipra-TV identity");
     } finally {
       setSavingIdentity(false);
     }
@@ -403,9 +416,9 @@ const OTvManager = () => {
 
       const { data } = await api.put("/api/admin/scheduled-live-tv/channel", formData);
       setChannel(data?.data?.channel || null);
-      toast.success("O-TV content saved");
+      toast.success("Pipra-TV content saved");
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to save O-TV content");
+      toast.error(error?.response?.data?.message || "Failed to save Pipra-TV content");
     } finally {
       setSavingContent(false);
     }
@@ -414,7 +427,7 @@ const OTvManager = () => {
   const handleReset = async () => {
     if (
       !window.confirm(
-        "Reset the O-TV channel? This deletes its identity, all-time pool, and schedule entirely.",
+        "Reset the Pipra-TV channel? This deletes its identity, all-time pool, and schedule entirely.",
       )
     ) {
       return;
@@ -424,15 +437,15 @@ const OTvManager = () => {
       setResetting(true);
       await api.delete("/api/admin/scheduled-live-tv/channel");
       setChannel(null);
-      setName("O-TV");
+      setName("Pipra-TV");
       setHomeFeatured(false);
       setLogoFile(null);
       setLogoPreview(null);
       setAllTimeVideos([]);
       setSchedule([]);
-      toast.success("O-TV channel reset");
+      toast.success("Pipra-TV channel reset");
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to reset the O-TV channel");
+      toast.error(error?.response?.data?.message || "Failed to reset the Pipra-TV channel");
     } finally {
       setResetting(false);
     }
@@ -452,11 +465,11 @@ const OTvManager = () => {
         onSubmit={saveIdentity}
         className="rounded-[28px] border border-[#8b5cf6]/20 bg-white/[0.06] p-6 shadow-2xl shadow-black/40 backdrop-blur-xl md:p-8"
       >
-        <h2 className="mb-1 text-xl font-black text-white">O-TV Identity</h2>
+        <h2 className="mb-1 text-xl font-black text-white">Pipra-TV Identity</h2>
         <p className="mb-5 text-sm text-slate-400">
           {channel
             ? "The site's own broadcast channel — name and logo shown to viewers."
-            : "Set up O-TV's name and logo first, then add its content below."}
+            : "Set up Pipra-TV's name and logo first, then add its content below."}
         </p>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -468,7 +481,7 @@ const OTvManager = () => {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="O-TV"
+              placeholder="Pipra-TV"
               className="w-full rounded-2xl border border-[#8b5cf6]/20 bg-black/35 px-4 py-3.5 text-base text-white outline-none placeholder:text-slate-500 transition focus:border-[#8b5cf6]/70 focus:ring-2 focus:ring-[#8b5cf6]/20"
             />
           </div>
@@ -508,6 +521,82 @@ const OTvManager = () => {
           </div>
         </div>
 
+        <div className="mt-4">
+          <label className="mb-2 block text-sm font-semibold text-slate-200">
+            Live TV Categories{" "}
+            {selectedCategories.length > 0 && (
+              <span className="text-violet-300">
+                ({selectedCategories.length} selected)
+              </span>
+            )}
+          </label>
+
+          <div className="flex flex-wrap gap-2 rounded-2xl border border-[#8b5cf6]/20 bg-black/35 p-3">
+            {categories.map((entry) => {
+              const active = selectedCategories.includes(entry.key);
+
+              return (
+                <button
+                  key={entry.key}
+                  type="button"
+                  onClick={() =>
+                    setSelectedCategories((previous) =>
+                      previous.includes(entry.key)
+                        ? previous.filter((item) => item !== entry.key)
+                        : [...previous, entry.key],
+                    )
+                  }
+                  className={`cursor-pointer rounded-full border px-3.5 py-2 text-xs font-bold transition ${
+                    active
+                      ? "border-[#8b5cf6] bg-[#8b5cf6] text-white"
+                      : "border-[#8b5cf6]/25 bg-black/30 text-slate-300 hover:border-[#8b5cf6]/60 hover:text-white"
+                  }`}
+                >
+                  {entry.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <p className="mt-1.5 text-xs text-slate-400">
+            Which sections Pipra-TV appears under on the client's Live TV page.
+            Leave all off to keep it in the pinned row only — Pipra-TV is never
+            listed under "Other Channels".
+          </p>
+        </div>
+
+        <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-[#8b5cf6]/15 bg-black/20 px-4 py-3.5">
+          <input
+            type="checkbox"
+            checked={showOnList}
+            onChange={(e) => setShowOnList(e.target.checked)}
+            className="mt-0.5 h-5 w-5 cursor-pointer accent-[#8b5cf6]"
+          />
+          <span className="text-base text-slate-200">
+            Show on list
+            <span className="mt-0.5 block text-xs text-slate-400">
+              Shows Pipra-TV directly in each selected category's row on the
+              Live TV page (max {listLimit} channels per category).
+            </span>
+          </span>
+        </label>
+
+        <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border border-[#8b5cf6]/15 bg-black/20 px-4 py-3.5">
+          <input
+            type="checkbox"
+            checked={pinned}
+            onChange={(e) => setPinned(e.target.checked)}
+            className="mt-0.5 h-5 w-5 cursor-pointer accent-[#8b5cf6]"
+          />
+          <span className="text-base text-slate-200">
+            Pin to the top of Live TV
+            <span className="mt-0.5 block text-xs text-slate-400">
+              Puts Pipra-TV first in the "Pinned Channels" slider directly under
+              the player, above every category.
+            </span>
+          </span>
+        </label>
+
         <label className="mt-4 flex cursor-pointer items-center gap-3 rounded-2xl border border-[#8b5cf6]/15 bg-black/20 px-4 py-3.5">
           <input
             type="checkbox"
@@ -525,7 +614,7 @@ const OTvManager = () => {
             className="flex cursor-pointer items-center gap-2.5 rounded-2xl bg-gradient-to-r from-[#c4b5fd] via-[#8b5cf6] to-[#4338ca] px-6 py-3.5 text-base font-black text-white shadow-lg shadow-[#8b5cf6]/30 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Save className="h-4 w-4" />
-            {savingIdentity ? "Saving..." : channel ? "Update Identity" : "Create O-TV Channel"}
+            {savingIdentity ? "Saving..." : channel ? "Update Identity" : "Create Pipra-TV Channel"}
           </button>
 
           {channel && (
@@ -536,7 +625,7 @@ const OTvManager = () => {
               className="ml-auto flex cursor-pointer items-center gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 text-xs font-bold text-rose-300 transition hover:bg-rose-500/20 disabled:opacity-60"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              {resetting ? "Resetting..." : "Reset O-TV Channel"}
+              {resetting ? "Resetting..." : "Reset Pipra-TV Channel"}
             </button>
           )}
         </div>
@@ -548,9 +637,9 @@ const OTvManager = () => {
           onSubmit={saveContent}
           className="rounded-[28px] border border-[#8b5cf6]/20 bg-white/[0.06] p-6 shadow-2xl shadow-black/40 backdrop-blur-xl md:p-8"
         >
-          <h2 className="mb-1 text-xl font-black text-white">O-TV Content</h2>
+          <h2 className="mb-1 text-xl font-black text-white">Pipra-TV Content</h2>
           <p className="mb-5 text-sm text-slate-400">
-            Upload the videos O-TV plays and program its broadcast timetable.
+            Upload the videos Pipra-TV plays and program its broadcast timetable.
           </p>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -728,7 +817,7 @@ const OTvManager = () => {
       {channel?.homeFeatured && (
         <p className="flex items-center gap-2 text-xs text-slate-500">
           <HomeIcon className="h-3.5 w-3.5" />
-          O-TV is shown on the home page's Live TV row.
+          Pipra-TV is shown on the home page's Live TV row.
         </p>
       )}
     </div>

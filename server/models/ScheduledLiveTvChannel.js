@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+import { LIVE_TV_CATEGORY_KEYS } from "./liveTvCategories.js";
+
 // A video the admin uploaded directly (Bunny-hosted) — never a reference
 // into the main Video content library, since this system manages its own
 // uploads entirely separately.
@@ -40,7 +42,7 @@ const allTimeVideoSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// O-TV — the site's own singleton broadcast channel (there is only ever
+// Pipra-TV — the site's own singleton broadcast channel (there is only ever
 // one document in this collection). Fully separate collection from
 // LiveTvChannel (the external-stream IPTV system) — different admin page,
 // different data shape, no shared fields to keep straight.
@@ -53,6 +55,14 @@ const scheduledLiveTvChannelSchema = new mongoose.Schema(
 
     logo: { type: String, default: null },
     homeFeatured: { type: Boolean, default: false },
+    // Same meaning as on LiveTvChannel — which Live TV page sections this
+    // shows up in, and whether it's also in the pinned row at the top.
+    categories: {
+      type: [{ type: String, enum: LIVE_TV_CATEGORY_KEYS }],
+      default: [],
+    },
+    showOnList: { type: Boolean, default: false },
+    pinned: { type: Boolean, default: false },
     order: { type: Number, default: 0 },
   },
   { timestamps: true },

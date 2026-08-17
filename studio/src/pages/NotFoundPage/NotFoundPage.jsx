@@ -13,7 +13,7 @@ const NotFoundPage = () => {
         </h1>
         <p className="mt-4 text-lg font-semibold">Page Not Found</p>
         <p className="mt-2 text-sm text-slate-400">
-          The page you're looking for doesn't exist in O-TV Studio.
+          The page you're looking for doesn't exist in Pipra-TV Studio.
         </p>
 
         <button

@@ -6,8 +6,8 @@ const Notice = () => {
 
   const noticeText = useMemo(() => {
     return isBangla
-      ? "প্রতিদিন নতুন মুভি ও লাইভ টিভি যুক্ত হচ্ছে! এখনই O-TV-এ উপভোগ করুন! প্রতিদিন নতুন মুভি ও লাইভ টিভি যুক্ত হচ্ছে! এখনই O-TV-এ উপভোগ করুন!"
-      : "New movies and live TV added every day! Enjoy them now on O-TV! New movies and live TV added every day! Enjoy them now on O-TV!";
+      ? "প্রতিদিন নতুন মুভি ও লাইভ টিভি যুক্ত হচ্ছে! এখনই Pipra-TV-এ উপভোগ করুন! প্রতিদিন নতুন মুভি ও লাইভ টিভি যুক্ত হচ্ছে! এখনই Pipra-TV-এ উপভোগ করুন!"
+      : "New movies and live TV added every day! Enjoy them now on Pipra-TV! New movies and live TV added every day! Enjoy them now on Pipra-TV!";
   }, [isBangla]);
 
   return (

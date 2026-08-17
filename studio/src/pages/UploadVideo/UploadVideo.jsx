@@ -74,7 +74,7 @@ const UploadVideo = () => {
           </h1>
           <p className="mt-1 text-sm text-slate-400">
             Fill in the details below. Your video will be reviewed by an
-            admin before it goes live on O-TV.
+            admin before it goes live on Pipra-TV.
           </p>
         </div>
       </div>

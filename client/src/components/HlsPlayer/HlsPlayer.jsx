@@ -14,7 +14,10 @@ import { useAdCampaigns } from "../../hooks/useAdCampaigns";
 import { useWatchPresence } from "../../hooks/useWatchPresence";
 import { trackAction } from "../../hooks/presenceSocket";
 
-const HlsPlayer = ({ src, poster, title, adsTarget }) => {
+// `onUnavailable` lets the page that owns the channel list know this
+// stream is dead, so it can drop the channel instead of leaving it in the
+// grid for the next viewer to click.
+const HlsPlayer = ({ src, poster, title, adsTarget, onUnavailable }) => {
   const containerRef = useRef(null);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -29,12 +32,26 @@ const HlsPlayer = ({ src, poster, title, adsTarget }) => {
   const [playing, setPlaying] = useState(false);
   const [buffering, setBuffering] = useState(true);
   const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
   const [fullscreen, setFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [error, setError] = useState(false);
 
   const { campaigns } = useAdCampaigns(adsTarget);
   useWatchPresence("liveTv", adsTarget?.liveTv, title);
+
+  // Kept in a ref so the attach effect below stays keyed on `src` alone
+  // and doesn't re-attach every time the parent re-renders.
+  const onUnavailableRef = useRef(onUnavailable);
+
+  useEffect(() => {
+    onUnavailableRef.current = onUnavailable;
+  }, [onUnavailable]);
+
+  const reportUnavailable = (streamUrl) => {
+    setError(true);
+    onUnavailableRef.current?.(streamUrl);
+  };
 
   // Attaches and autoplays as soon as the channel is opened — falls back to
   // muted playback if the browser blocks autoplay-with-sound.
@@ -63,7 +80,7 @@ const HlsPlayer = ({ src, poster, title, adsTarget }) => {
         hls.loadSource(src);
         hls.attachMedia(video);
         hls.on(Hls.Events.ERROR, (_event, data) => {
-          if (data?.fatal) setError(true);
+          if (data?.fatal) reportUnavailable(src);
         });
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           tryPlay();
@@ -71,9 +88,9 @@ const HlsPlayer = ({ src, poster, title, adsTarget }) => {
       } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
         video.src = src;
         video.addEventListener("loadedmetadata", tryPlay);
-        video.addEventListener("error", () => setError(true));
+        video.addEventListener("error", () => reportUnavailable(src));
       } else {
-        setError(true);
+        reportUnavailable(src);
       }
     };
 
@@ -105,6 +122,20 @@ const HlsPlayer = ({ src, poster, title, adsTarget }) => {
     setMuted(video.muted);
     autoMutedRef.current = false; // this is now a deliberate choice, not the autoplay fallback
     trackAction(video.muted ? "Muted Live TV" : "Unmuted Live TV", title);
+  };
+
+  const handleVolume = (e) => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const value = Number(e.target.value);
+    video.volume = value;
+    video.muted = value === 0;
+    setVolume(value);
+    setMuted(value === 0);
+    // Dragging the slider is a deliberate choice too, so the autoplay
+    // rescue below must not override it either.
+    autoMutedRef.current = false;
   };
 
   // Browsers block unmuted autoplay before the user has interacted with
@@ -164,7 +195,10 @@ const HlsPlayer = ({ src, poster, title, adsTarget }) => {
     const video = videoRef.current;
     if (!video) return undefined;
 
-    const onVolumeChange = () => setMuted(video.muted);
+    const onVolumeChange = () => {
+      setMuted(video.muted);
+      setVolume(video.volume);
+    };
     video.addEventListener("volumechange", onVolumeChange);
     return () => video.removeEventListener("volumechange", onVolumeChange);
   }, []);
@@ -268,17 +302,30 @@ const HlsPlayer = ({ src, poster, title, adsTarget }) => {
               )}
             </button>
 
-            <button
-              type="button"
-              onClick={toggleMute}
-              className="cursor-pointer text-white transition hover:text-[#16d6dc]"
-            >
-              {muted ? (
-                <VolumeX className="h-5 w-5" />
-              ) : (
-                <Volume2 className="h-5 w-5" />
-              )}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleMute}
+                className="cursor-pointer text-white transition hover:text-[#16d6dc]"
+              >
+                {muted || volume === 0 ? (
+                  <VolumeX className="h-5 w-5" />
+                ) : (
+                  <Volume2 className="h-5 w-5" />
+                )}
+              </button>
+
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={muted ? 0 : volume}
+                onChange={handleVolume}
+                aria-label="Volume"
+                className="hidden h-1 w-20 cursor-pointer appearance-none rounded-full bg-white/25 accent-[#16d6dc] sm:block"
+              />
+            </div>
           </div>
 
           <button

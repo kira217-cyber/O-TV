@@ -5,6 +5,7 @@ import { Clock, Film, ShieldAlert } from "lucide-react";
 import { api } from "../../api/axios";
 import VideoPlayer from "../../components/VideoPlayer/VideoPlayer";
 import PlayerSkeleton from "../../components/Skeletons/PlayerSkeleton";
+import ViewerStats from "../../components/ViewerStats/ViewerStats";
 
 const WatchVideo = () => {
   const { id } = useParams();
@@ -41,7 +42,7 @@ const WatchVideo = () => {
   const base = api.defaults.baseURL;
 
   return (
-    <div className="mx-auto w-full max-w-[1680px] px-4 pb-16 pt-4 text-white sm:px-6 lg:px-10 xl:px-[42px]">
+    <div className="player-frame mx-auto w-full max-w-[1680px] px-4 pb-16 pt-4 text-white sm:px-6 lg:px-10 xl:px-[42px]">
       <div className="pt-5">
         <VideoPlayer
           src={video.video?.url}
@@ -77,6 +78,15 @@ const WatchVideo = () => {
             {video.studioUser.channel.name}
           </Link>
         )}
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-[#16d6dc]/25 bg-[#16d6dc]/[0.07] px-4 py-3">
+        <p className="flex items-center gap-1.5 text-[11px] font-semibold text-[#16d6dc] sm:text-xs">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#16d6dc]" />
+          Now Playing
+        </p>
+
+        <ViewerStats id={id} />
       </div>
 
       {video.description && (

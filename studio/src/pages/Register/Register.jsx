@@ -84,7 +84,7 @@ const Register = () => {
 
       dispatch(setCredentials({ user: data.user, token: data.token }));
 
-      toast.success("Welcome to O-TV Studio!");
+      toast.success("Welcome to Pipra-TV Studio!");
       navigate("/", { replace: true });
     } catch (error) {
       toast.error(error?.response?.data?.message || "Registration failed");
@@ -132,7 +132,7 @@ const Register = () => {
           </h2>
 
           <p className="mt-3 text-sm leading-relaxed text-slate-300">
-            Join O-TV Studio and share your movies, shows, and live streams
+            Join Pipra-TV Studio and share your movies, shows, and live streams
             with a growing audience. Upload your content, track its
             performance, and grow your channel — all from one dashboard.
           </p>
@@ -155,7 +155,7 @@ const Register = () => {
             </h1>
 
             <p className="mt-2 text-sm text-slate-300">
-              Fill in your details to get started as a creator on O-TV.
+              Fill in your details to get started as a creator on Pipra-TV.
             </p>
           </div>
 
@@ -191,7 +191,7 @@ const Register = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="creator@o-tv.live"
+                    placeholder="creator@pipratv.com"
                     className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
                   />
                 </div>

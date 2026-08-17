@@ -116,7 +116,7 @@ const AllUsers = () => {
           </h1>
 
           <p className="mt-2 text-sm text-slate-300">
-            Search, review, and manage every O-TV Studio creator account.
+            Search, review, and manage every Pipra-TV Studio creator account.
             {total > 0 && (
               <span className="ml-1 text-slate-400">({total} total)</span>
             )}

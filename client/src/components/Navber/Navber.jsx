@@ -6,9 +6,9 @@ import { NavLink, useLocation, useNavigate } from "react-router";
 import { api } from "../../api/axios";
 import { useSiteSettings } from "../../hooks/useSiteSettings";
 import { trackAction } from "../../hooks/presenceSocket";
+import defaultLogo from "../../assets/pipra-tv-logo.png";
 
-const DEFAULT_LOGO_URL =
-  "https://asset.bioscopelive.com/uploads/images/2025/07/28/images_d6ce912746f794656d087b55ef04100d_goplay_bios.png?w=560";
+const DEFAULT_LOGO_URL = defaultLogo;
 
 const STUDIO_REGISTER_URL = `${
   import.meta.env.VITE_STUDIO_URL || "http://localhost:5174"
@@ -135,12 +135,12 @@ const Navber = () => {
           {/* Desktop logo */}
           <NavLink
             to="/"
-            aria-label="O-TV Home"
+            aria-label="Pipra-TV Home"
             className="flex shrink-0 cursor-pointer items-center"
           >
             <img
               src={logoUrl}
-              alt="O-TV"
+              alt="Pipra-TV"
               draggable={false}
               className="h-auto w-[162px] select-none object-contain"
             />
@@ -189,12 +189,12 @@ const Navber = () => {
             {/* Mobile logo */}
             <NavLink
               to="/"
-              aria-label="O-TV Home"
+              aria-label="Pipra-TV Home"
               className="flex shrink-0 cursor-pointer items-center"
             >
               <img
                 src={logoUrl}
-                alt="O-TV"
+                alt="Pipra-TV"
                 draggable={false}
                 className="h-auto w-[145px] select-none object-contain"
               />
