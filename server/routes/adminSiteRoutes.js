@@ -14,6 +14,7 @@ import {
   parseLiveTvCategories,
 } from "../models/liveTvCategories.js";
 import { LIVE_TV_LIST_LIMIT, findFullListCategory } from "../utils/liveTvList.js";
+import { loadLiveTvSourceChannels } from "../utils/liveTvSource.js";
 
 import upload from "../config/multer.js";
 import { handleUpload } from "../utils/handleUpload.js";
@@ -488,24 +489,19 @@ router.delete("/hero-slides/:id", async (req, res) => {
 /* =========================
    Live TV — external source lookup + managed channel list
 ========================= */
-const LIVE_TV_SOURCE_URL =
-  "https://raw.githubusercontent.com/abusaeeidx/Mrgify-BDIX-IPTV/main/Channels_data.json";
-
 router.get("/live-tv-source", async (req, res) => {
   try {
-    const response = await fetch(LIVE_TV_SOURCE_URL);
+    const { channels, stale } = await loadLiveTvSourceChannels();
 
-    if (!response.ok) {
-      return errorResponse(res, "Failed to fetch the channel source list", 502);
-    }
-
-    const data = await response.json();
-
-    return successResponse(res, "Channel source list loaded", {
-      channels: Array.isArray(data?.channels) ? data.channels : [],
-    });
+    return successResponse(
+      res,
+      stale
+        ? "Channel source list loaded from cache — the source is unreachable right now"
+        : "Channel source list loaded",
+      { channels, stale },
+    );
   } catch (error) {
-    return errorResponse(res, error.message, 500);
+    return errorResponse(res, error.message, 502);
   }
 });
 

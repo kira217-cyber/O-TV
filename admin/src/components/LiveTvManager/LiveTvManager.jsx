@@ -17,6 +17,8 @@ import { api } from "../../api/axios";
 
 const LiveTvManager = () => {
   const [sourceChannels, setSourceChannels] = useState([]);
+  const [sourceStale, setSourceStale] = useState(false);
+  const [sourceError, setSourceError] = useState("");
   const [loadingSource, setLoadingSource] = useState(true);
   const [sourceSearch, setSourceSearch] = useState("");
 
@@ -42,12 +44,15 @@ const LiveTvManager = () => {
   const loadSource = async () => {
     try {
       setLoadingSource(true);
+      setSourceError("");
       const { data } = await api.get("/api/admin/site/live-tv-source");
       setSourceChannels(data?.data?.channels || []);
+      setSourceStale(Boolean(data?.data?.stale));
     } catch (error) {
-      toast.error(
-        error?.response?.data?.message || "Failed to load the channel source list",
-      );
+      const message =
+        error?.response?.data?.message || "Failed to load the channel source list";
+      setSourceError(message);
+      toast.error(message);
     } finally {
       setLoadingSource(false);
     }
@@ -299,6 +304,26 @@ const LiveTvManager = () => {
               className="w-full rounded-2xl border border-[#8b5cf6]/20 bg-black/35 py-3 pl-12 pr-4 text-sm text-white outline-none placeholder:text-slate-500 transition focus:border-[#8b5cf6]/70 focus:ring-2 focus:ring-[#8b5cf6]/20"
             />
           </div>
+
+          {sourceStale && (
+            <p className="mb-3 rounded-2xl border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-xs text-amber-200">
+              The channel source is unreachable right now — showing the last
+              downloaded copy. It may be missing recently added channels.
+            </p>
+          )}
+
+          {sourceError && (
+            <div className="mb-3 rounded-2xl border border-rose-400/20 bg-rose-400/5 px-4 py-3 text-xs text-rose-200">
+              <p>{sourceError}</p>
+              <button
+                type="button"
+                onClick={loadSource}
+                className="mt-2 cursor-pointer rounded-xl border border-rose-400/30 px-3 py-1.5 font-bold text-rose-100 transition hover:bg-rose-400/10"
+              >
+                Try again
+              </button>
+            </div>
+          )}
 
           {loadingSource ? (
             <div className="py-8 text-center text-slate-400">Loading source list...</div>

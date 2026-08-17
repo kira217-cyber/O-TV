@@ -65,7 +65,7 @@ const PrivateVideo = () => {
     <div className="min-h-screen">
       <PrivateHeader userEmail={user?.email} onLogout={() => dispatch(logout())} />
 
-      <div className="mx-auto w-full max-w-[1680px] px-4 pb-16 pt-6 text-white sm:px-6 lg:px-10 xl:px-[42px]">
+      <div className="player-frame mx-auto w-full max-w-[1680px] px-4 pb-16 pt-6 text-white sm:px-6 lg:px-10 xl:px-[42px]">
         <div className="mb-6 flex items-center gap-3 sm:mb-8">
           {selectedPlaylist ? (
             <button

@@ -37,9 +37,9 @@ const LiveTvChannelRow = ({
         <h3 className="flex min-w-0 items-center gap-2 text-base font-bold text-white sm:text-lg">
           {pinned && <Pin className="h-4 w-4 shrink-0 text-[#16d6dc]" />}
           <span className="truncate">{title}</span>
-          <span className="shrink-0 text-xs font-semibold text-[#8b9295]">
+          {/* <span className="shrink-0 text-xs font-semibold text-[#8b9295]">
             {channels.length}
-          </span>
+          </span> */}
         </h3>
 
         {viewAllTo && (
