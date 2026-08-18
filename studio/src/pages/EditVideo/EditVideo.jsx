@@ -6,7 +6,7 @@ import { Pencil } from "lucide-react";
 import { api } from "../../api/axios";
 import VideoForm from "../../components/VideoForm/VideoForm";
 import UploadProgressModal from "../../components/UploadProgressModal/UploadProgressModal";
-import { useUploadProgress } from "../../hooks/useUploadProgress";
+import { isUploadCancelled, useUploadProgress } from "../../hooks/useUploadProgress";
 
 const EditVideo = () => {
   const { id } = useParams();
@@ -17,7 +17,7 @@ const EditVideo = () => {
   const [submitting, setSubmitting] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const { upload, start, reportSent, reportStored, complete, fail, reset } =
+  const { upload, start, reportSent, reportStored, complete, fail, cancel, reset } =
     useUploadProgress();
 
   useEffect(() => {
@@ -85,9 +85,11 @@ const EditVideo = () => {
         uploadQuery.set("trailerBytes", String(trailerFile.size));
       }
 
+      let signal;
+
       if (sendingFile) {
         const biggest = videoFile instanceof File ? videoFile : trailerFile;
-        start({
+        signal = start({
           fileName: biggest.name,
           fileSize: biggest.size,
           // One leg, not two: the file reaches storage as it is sent, so the
@@ -97,6 +99,7 @@ const EditVideo = () => {
       }
 
       await api.put(`/api/studio/videos/${id}?${uploadQuery}`, formData, {
+        signal,
         onUploadProgress: (event) => {
           if (!event.total) return;
           setProgress((previous) =>
@@ -116,9 +119,14 @@ const EditVideo = () => {
       toast.success("Video updated and sent back for admin review");
       navigate("/my-videos");
     } catch (error) {
-      const message = error?.response?.data?.message || "Failed to update video";
-      fail(message);
-      toast.error(message);
+      if (isUploadCancelled(error)) {
+        reset();
+        toast.info("Upload cancelled");
+      } else {
+        const message = error?.response?.data?.message || "Failed to update video";
+        fail(message);
+        toast.error(message);
+      }
     } finally {
       clearInterval(pollBunnyProgress);
       setSubmitting(false);
@@ -172,7 +180,7 @@ const EditVideo = () => {
         }}
       />
 
-      <UploadProgressModal upload={upload} onClose={reset} />
+      <UploadProgressModal upload={upload} onClose={reset} onCancel={cancel} />
     </div>
   );
 };

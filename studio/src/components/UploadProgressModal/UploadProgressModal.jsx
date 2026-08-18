@@ -28,7 +28,7 @@ const formatSize = (bytes) => {
 
 // Blocks the page for as long as an upload is running, so nobody navigates
 // away mid-transfer, and shows exactly how much longer it has to go.
-const UploadProgressModal = ({ upload, onClose }) => {
+const UploadProgressModal = ({ upload, onClose, onCancel }) => {
   if (!upload?.active) return null;
 
   const { status, phase, percent, remaining, speed, fileName, fileSize, error } =
@@ -36,6 +36,7 @@ const UploadProgressModal = ({ upload, onClose }) => {
 
   const isDone = status === "done";
   const isError = status === "error";
+  const isCancelling = status === "cancelling";
 
   // "prepare" is the gap where the browser has finished sending but the
   // server has not started pushing to storage yet — naming it stops that
@@ -82,7 +83,9 @@ const UploadProgressModal = ({ upload, onClose }) => {
                 ? "Upload failed"
                 : isDone
                   ? "Upload successful"
-                  : "Uploading video"}
+                  : isCancelling
+                    ? "Cancelling upload"
+                    : "Uploading video"}
             </h2>
 
             {fileName && (
@@ -152,8 +155,21 @@ const UploadProgressModal = ({ upload, onClose }) => {
             <p className="mt-5 text-center text-xs leading-relaxed text-slate-400">
               {isDone
                 ? "You can close this — the video is saved."
-                : "Keep this tab open. Closing it now cancels the upload."}
+                : isCancelling
+                  ? "Stopping the transfer and cleaning up..."
+                  : "Keep this tab open. Closing it now cancels the upload."}
             </p>
+
+            {onCancel && !isDone && (
+              <button
+                type="button"
+                onClick={onCancel}
+                disabled={isCancelling}
+                className="mt-4 w-full cursor-pointer rounded-2xl border border-rose-400/30 bg-rose-500/10 px-5 py-3 text-sm font-bold text-rose-200 transition hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isCancelling ? "Cancelling..." : "Cancel upload"}
+              </button>
+            )}
           </>
         )}
       </div>

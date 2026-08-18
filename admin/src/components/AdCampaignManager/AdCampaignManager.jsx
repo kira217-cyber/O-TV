@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 
 import { api } from "../../api/axios";
+import UploadProgressModal from "../UploadProgressModal/UploadProgressModal";
+import { isUploadCancelled, useUploadProgress } from "../../hooks/useUploadProgress";
 import {
   TARGET_SCOPES,
   IMAGE_AD_SECTIONS,
@@ -83,6 +85,9 @@ const AdCampaignManager = () => {
   const [intervalSeconds, setIntervalSeconds] = useState(120);
 
   const [saving, setSaving] = useState(false);
+
+  const { upload, start, reportSent, complete, fail, cancel, reset } =
+    useUploadProgress();
   const [deletingId, setDeletingId] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
 
@@ -467,18 +472,51 @@ const AdCampaignManager = () => {
         formData.append("displayDurationSeconds", String(displayDurationSeconds));
       }
 
-      if (editingId) {
-        await api.put(`/api/admin/ad-campaigns/${editingId}`, formData);
-        toast.success("Ad campaign updated");
-      } else {
-        await api.post("/api/admin/ad-campaigns", formData);
-        toast.success("Ad campaign created");
+      // An ad video is the only part of this form big enough to be worth
+      // watching; image sections upload in a moment.
+      let signal;
+      const sendingAdVideo = type === "video" && Boolean(adVideoFile);
+
+      if (sendingAdVideo) {
+        signal = start({
+          fileName: adVideoFile.name,
+          fileSize: adVideoFile.size,
+          storedBytes: adVideoFile.size,
+        });
       }
 
+      const config = {
+        signal,
+        onUploadProgress: (event) => {
+          if (!event.total) return;
+          reportSent(event.loaded, event.total);
+        },
+      };
+
+      if (editingId) {
+        await api.put(`/api/admin/ad-campaigns/${editingId}`, formData, config);
+      } else {
+        await api.post("/api/admin/ad-campaigns", formData, config);
+      }
+
+      if (sendingAdVideo) {
+        complete();
+        await new Promise((resolve) => setTimeout(resolve, 1400));
+        reset();
+      }
+
+      toast.success(editingId ? "Ad campaign updated" : "Ad campaign created");
       resetForm();
       loadCampaigns();
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to save ad campaign");
+      if (isUploadCancelled(error)) {
+        reset();
+        toast.info("Upload cancelled");
+      } else {
+        const message = error?.response?.data?.message || "Failed to save ad campaign";
+        fail(message);
+        toast.error(message);
+      }
     } finally {
       setSaving(false);
     }
@@ -1117,6 +1155,8 @@ const AdCampaignManager = () => {
           </div>
         )}
       </div>
+
+      <UploadProgressModal upload={upload} onClose={reset} onCancel={cancel} />
     </div>
   );
 };

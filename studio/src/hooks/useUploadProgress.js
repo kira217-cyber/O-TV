@@ -65,7 +65,7 @@ const writePrior = (next) => {
 
 const IDLE = {
   active: false,
-  status: "idle", // idle | uploading | done | error
+  status: "idle", // idle | uploading | cancelling | done | error
   phase: "send", // send | prepare | store
   percent: 0,
   remaining: null, // seconds, or null until there is a measurement to use
@@ -92,10 +92,18 @@ const freshMeter = (storedBytes) => ({
   percent: 0,
 });
 
+// True for the error axios raises when an upload is deliberately aborted,
+// so a cancel is never reported to the user as a failure.
+export const isUploadCancelled = (error) =>
+  error?.code === "ERR_CANCELED" ||
+  error?.name === "CanceledError" ||
+  error?.name === "AbortError";
+
 export const useUploadProgress = () => {
   const [state, setState] = useState(IDLE);
   const meter = useRef(freshMeter(0));
   const prior = useRef(readPrior());
+  const aborter = useRef(null);
 
   const publish = useCallback(() => {
     const m = meter.current;
@@ -191,11 +199,25 @@ export const useUploadProgress = () => {
     publish();
   }, [publish]);
 
+  // Returns the AbortSignal to hand to the request, so the modal's cancel
+  // button can stop an upload that is already in flight.
   const start = useCallback(({ fileName = "", fileSize = 0, storedBytes = 0 } = {}) => {
     meter.current = freshMeter(storedBytes);
     meter.current.sendStartedAt = Date.now();
     prior.current = readPrior();
+    aborter.current = new AbortController();
     setState({ ...IDLE, active: true, status: "uploading", fileName, fileSize });
+    return aborter.current.signal;
+  }, []);
+
+  // Aborting is not instant — the request has to unwind and the server has
+  // to notice — so the modal stays up in a "cancelling" state until the
+  // page catches the resulting error and closes it.
+  const cancel = useCallback(() => {
+    aborter.current?.abort();
+    setState((previous) =>
+      previous.status === "uploading" ? { ...previous, status: "cancelling" } : previous,
+    );
   }, []);
 
   // Leg 1 — byte counts straight from the browser's own upload progress.
@@ -327,7 +349,16 @@ export const useUploadProgress = () => {
     };
   }, [state.active]);
 
-  return { upload: state, start, reportSent, reportStored, complete, fail, reset };
+  return {
+    upload: state,
+    start,
+    reportSent,
+    reportStored,
+    complete,
+    fail,
+    cancel,
+    reset,
+  };
 };
 
 export default useUploadProgress;

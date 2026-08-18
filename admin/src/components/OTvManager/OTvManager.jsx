@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 
 import { api } from "../../api/axios";
+import UploadProgressModal from "../UploadProgressModal/UploadProgressModal";
+import { isUploadCancelled, useUploadProgress } from "../../hooks/useUploadProgress";
 
 // Probes a *local* video File's real playable duration before it's ever
 // uploaded (same technique used for trailer uploads in AdminVideoForm.jsx)
@@ -67,8 +69,10 @@ const makeUploadId = () =>
 // Uploads one raw video File straight to Bunny storage (via the server's
 // relay) and returns { url, fileName, originalName, durationSeconds }.
 // `onProgress` receives 0-100, combining the client->server leg (0-50%)
-// and the server->Bunny leg (50-100%, polled).
-const uploadOTvVideo = async (file, onProgress) => {
+// and the server->Bunny leg (50-100%, polled). `tracker` is the shared
+// upload-progress hook, which drives the countdown modal and supplies the
+// signal its cancel button aborts with.
+const uploadOTvVideo = async (file, onProgress, tracker) => {
   const duration = await probeVideoDuration(file);
   if (!Number.isFinite(duration) || duration < 1) {
     toast.error("Could not detect this video's duration — try another file");
@@ -88,6 +92,7 @@ const uploadOTvVideo = async (file, onProgress) => {
       );
       bunnyPercent = data?.data?.percent ?? bunnyPercent;
       onProgress((previous) => Math.max(previous, 50 + Math.round(bunnyPercent / 2)));
+      tracker.reportStored(bunnyPercent);
     } catch {
       // Non-critical — the bar just won't advance this tick.
     }
@@ -95,21 +100,44 @@ const uploadOTvVideo = async (file, onProgress) => {
 
   try {
     onProgress(0);
+
+    const signal = tracker.start({
+      fileName: file.name,
+      fileSize: file.size,
+      storedBytes: file.size,
+    });
+
     const { data } = await api.post("/api/admin/scheduled-live-tv/upload-video", formData, {
+      signal,
       onUploadProgress: (event) => {
         if (!event.total) return;
         const clientPercent = Math.round((event.loaded / event.total) * 100);
         onProgress((previous) => Math.max(previous, Math.round(clientPercent / 2)));
+        tracker.reportSent(event.loaded, event.total);
       },
     });
     onProgress(100);
 
     const uploaded = data?.data?.video;
-    if (!uploaded?.url) return null;
+    if (!uploaded?.url) {
+      tracker.reset();
+      return null;
+    }
+
+    tracker.complete();
+    await new Promise((resolve) => setTimeout(resolve, 1400));
+    tracker.reset();
 
     return { ...uploaded, durationSeconds: Math.round(duration) };
   } catch (error) {
-    toast.error(error?.response?.data?.message || "Failed to upload video");
+    if (isUploadCancelled(error)) {
+      tracker.reset();
+      toast.info("Upload cancelled");
+    } else {
+      const message = error?.response?.data?.message || "Failed to upload video";
+      tracker.fail(message);
+      toast.error(message);
+    }
     return null;
   } finally {
     clearInterval(pollTimer);
@@ -121,6 +149,8 @@ const uploadOTvVideo = async (file, onProgress) => {
 const VideoUploadSlot = ({ video, onChange, label, prompt, hint }) => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+
+  const tracker = useUploadProgress();
 
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
@@ -134,7 +164,7 @@ const VideoUploadSlot = ({ video, onChange, label, prompt, hint }) => {
 
     setUploading(true);
     setProgress(0);
-    const uploaded = await uploadOTvVideo(file, setProgress);
+    const uploaded = await uploadOTvVideo(file, setProgress, tracker);
     setUploading(false);
     setProgress(0);
 
@@ -168,6 +198,12 @@ const VideoUploadSlot = ({ video, onChange, label, prompt, hint }) => {
             Change
           </button>
         </div>
+
+        <UploadProgressModal
+          upload={tracker.upload}
+          onClose={tracker.reset}
+          onCancel={tracker.cancel}
+        />
       </div>
     );
   }
@@ -200,6 +236,12 @@ const VideoUploadSlot = ({ video, onChange, label, prompt, hint }) => {
           />
         </div>
       )}
+
+      <UploadProgressModal
+        upload={tracker.upload}
+        onClose={tracker.reset}
+        onCancel={tracker.cancel}
+      />
     </div>
   );
 };

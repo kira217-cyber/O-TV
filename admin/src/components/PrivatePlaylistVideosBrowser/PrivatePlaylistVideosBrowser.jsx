@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 
 import { api } from "../../api/axios";
+import UploadProgressModal from "../UploadProgressModal/UploadProgressModal";
+import { isUploadCancelled, useUploadProgress } from "../../hooks/useUploadProgress";
 
 const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
 const VIDEO_TYPES = [
@@ -44,6 +46,9 @@ const PrivatePlaylistVideosBrowser = () => {
   const [editVideoPreview, setEditVideoPreview] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState(0);
+
+  const { upload, start, reportSent, reportStored, complete, fail, cancel, reset } =
+    useUploadProgress();
   const [deletingId, setDeletingId] = useState(null);
   const [playingVideo, setPlayingVideo] = useState(null);
 
@@ -184,6 +189,7 @@ const PrivatePlaylistVideosBrowser = () => {
             );
             bunnyPercent = data?.data?.percent ?? bunnyPercent;
             setSaveProgress((previous) => Math.max(previous, 50 + Math.round(bunnyPercent / 2)));
+            reportStored(bunnyPercent);
           } catch {
             // Non-critical — the bar just won't advance this tick.
           }
@@ -194,20 +200,49 @@ const PrivatePlaylistVideosBrowser = () => {
       setSaving(true);
       setSaveProgress(0);
 
+      // Only worth a modal when a video file is actually being sent — a
+      // details-only edit finishes before it could render.
+      let signal;
+      if (editVideoFile) {
+        signal = start({
+          fileName: editVideoFile.name,
+          fileSize: editVideoFile.size,
+          storedBytes: editVideoFile.size,
+        });
+      }
+
       const onUploadProgress = (event) => {
         if (!event.total) return;
         const clientPercent = Math.round((event.loaded / event.total) * 100);
         setSaveProgress((previous) =>
           Math.max(previous, editVideoFile ? Math.round(clientPercent / 2) : clientPercent),
         );
+        reportSent(event.loaded, event.total);
       };
 
-      await api.put(`/api/admin/private-videos/${id}`, formData, { onUploadProgress });
+      await api.put(`/api/admin/private-videos/${id}`, formData, {
+        signal,
+        onUploadProgress,
+      });
+
+      if (editVideoFile) {
+        complete();
+        await new Promise((resolve) => setTimeout(resolve, 1400));
+        reset();
+      }
+
       toast.success("Video updated");
       cancelEdit();
       loadVideos(selectedPlaylist._id || selectedPlaylist.id);
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to update the video");
+      if (isUploadCancelled(error)) {
+        reset();
+        toast.info("Upload cancelled");
+      } else {
+        const message = error?.response?.data?.message || "Failed to update the video";
+        fail(message);
+        toast.error(message);
+      }
     } finally {
       if (pollBunnyProgress) clearInterval(pollBunnyProgress);
       setSaving(false);
@@ -546,6 +581,8 @@ const PrivatePlaylistVideosBrowser = () => {
           </div>
         </div>
       )}
+
+      <UploadProgressModal upload={upload} onClose={reset} onCancel={cancel} />
     </div>
   );
 };

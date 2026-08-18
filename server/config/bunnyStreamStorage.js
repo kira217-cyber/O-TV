@@ -86,7 +86,14 @@ export const bunnyStreamStorage = {
 
     uploadStreamToBunny(file.stream, bunnyFileName, file.mimetype, size, onProgress)
       .then((bunnyUrl) => cb(null, { bunnyFileName, bunnyUrl, size }))
-      .catch(cb);
+      .catch((error) => {
+        // The transfer died part-way — the viewer cancelled, the connection
+        // dropped, storage refused it. Whatever partial object that left
+        // behind is nobody's now, and the response guard below can't catch
+        // it because an aborted request never sends one.
+        deleteFromBunny(bunnyFileName).catch(() => {});
+        cb(error);
+      });
   },
 
   // Called by multer when it aborts a request part-way (a later part fails

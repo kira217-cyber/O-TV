@@ -6,7 +6,7 @@ import { UploadCloud } from "lucide-react";
 import { api } from "../../api/axios";
 import VideoForm from "../../components/VideoForm/VideoForm";
 import UploadProgressModal from "../../components/UploadProgressModal/UploadProgressModal";
-import { useUploadProgress } from "../../hooks/useUploadProgress";
+import { isUploadCancelled, useUploadProgress } from "../../hooks/useUploadProgress";
 
 const UploadVideo = () => {
   const navigate = useNavigate();
@@ -14,7 +14,7 @@ const UploadVideo = () => {
   const [submitting, setSubmitting] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const { upload, start, reportSent, reportStored, complete, fail, reset } =
+  const { upload, start, reportSent, reportStored, complete, fail, cancel, reset } =
     useUploadProgress();
 
   const handleSubmit = async (formData) => {
@@ -56,7 +56,7 @@ const UploadVideo = () => {
     try {
       setSubmitting(true);
       setProgress(0);
-      start({
+      const signal = start({
         fileName: videoFile?.name,
         fileSize: videoFile?.size,
         // One leg, not two: the file reaches storage as it is sent, so the
@@ -65,6 +65,7 @@ const UploadVideo = () => {
       });
 
       await api.post(`/api/studio/videos?${uploadQuery}`, formData, {
+        signal,
         onUploadProgress: (event) => {
           if (!event.total) return;
           setProgress((previous) =>
@@ -84,9 +85,14 @@ const UploadVideo = () => {
       toast.success("Video uploaded successfully and is pending admin review");
       navigate("/my-videos");
     } catch (error) {
-      const message = error?.response?.data?.message || "Failed to upload video";
-      fail(message);
-      toast.error(message);
+      if (isUploadCancelled(error)) {
+        reset();
+        toast.info("Upload cancelled");
+      } else {
+        const message = error?.response?.data?.message || "Failed to upload video";
+        fail(message);
+        toast.error(message);
+      }
     } finally {
       clearInterval(pollBunnyProgress);
       setSubmitting(false);
@@ -119,7 +125,7 @@ const UploadVideo = () => {
         onSubmit={handleSubmit}
       />
 
-      <UploadProgressModal upload={upload} onClose={reset} />
+      <UploadProgressModal upload={upload} onClose={reset} onCancel={cancel} />
     </div>
   );
 };

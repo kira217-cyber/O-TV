@@ -20,7 +20,7 @@ import {
 
 import { api } from "../../api/axios";
 import UploadProgressModal from "../../components/UploadProgressModal/UploadProgressModal";
-import { useUploadProgress } from "../../hooks/useUploadProgress";
+import { isUploadCancelled, useUploadProgress } from "../../hooks/useUploadProgress";
 import {
   MATURITY_RATING_OPTIONS,
   CATEGORY_OPTIONS,
@@ -122,7 +122,7 @@ const VideoDetails = () => {
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const { upload, start, reportSent, reportStored, complete, fail, reset } =
+  const { upload, start, reportSent, reportStored, complete, fail, cancel, reset } =
     useUploadProgress();
   const [showRejectBox, setShowRejectBox] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -348,9 +348,11 @@ const VideoDetails = () => {
       // Only worth a modal when a file is actually being sent — a
       // details-only save finishes before it could even render.
       const sendingFile = Boolean(videoFile || trailerFile);
+      let signal;
+
       if (sendingFile) {
         const biggest = videoFile || trailerFile;
-        start({
+        signal = start({
           fileName: biggest.name,
           fileSize: biggest.size,
           // One leg, not two: the file reaches storage as it is sent, so the
@@ -360,6 +362,7 @@ const VideoDetails = () => {
       }
 
       const { data } = await api.put(`/api/admin/videos/${id}?${uploadQuery}`, formData, {
+        signal,
         onUploadProgress: (event) => {
           if (!event.total) return;
           setProgress((previous) =>
@@ -389,9 +392,14 @@ const VideoDetails = () => {
       setTrailerPreview(null);
       toast.success("Video updated successfully");
     } catch (error) {
-      const message = error?.response?.data?.message || "Failed to update video";
-      fail(message);
-      toast.error(message);
+      if (isUploadCancelled(error)) {
+        reset();
+        toast.info("Upload cancelled");
+      } else {
+        const message = error?.response?.data?.message || "Failed to update video";
+        fail(message);
+        toast.error(message);
+      }
     } finally {
       clearInterval(pollBunnyProgress);
       setSaving(false);
@@ -931,7 +939,7 @@ const VideoDetails = () => {
         </form>
       </div>
 
-      <UploadProgressModal upload={upload} onClose={reset} />
+      <UploadProgressModal upload={upload} onClose={reset} onCancel={cancel} />
     </div>
   );
 };
