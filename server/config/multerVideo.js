@@ -1,5 +1,7 @@
 import multer from "multer";
 
+import { bunnyStreamStorage } from "./bunnyStreamStorage.js";
+
 const IMAGE_MIME_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
 
 const VIDEO_MIME_TYPES = [
@@ -11,8 +13,10 @@ const VIDEO_MIME_TYPES = [
   "video/3gpp",
 ];
 
-// Videos need to be forwarded to Bunny as raw bytes, so this buffers in
-// memory instead of writing to local disk like the image-only multer config.
+// Video and trailer parts are piped straight through to Bunny as they
+// arrive (see bunnyStreamStorage.js); thumbnails still come back as an
+// in-memory buffer, exactly as multer.memoryStorage() delivered them.
+// Neither kind is ever written to local disk here.
 const MAX_VIDEO_SIZE_MB = Number(process.env.BUNNY_MAX_VIDEO_SIZE_MB) || 2048;
 
 const fileFilter = (req, file, cb) => {
@@ -40,7 +44,7 @@ const fileFilter = (req, file, cb) => {
 };
 
 const uploadVideo = multer({
-  storage: multer.memoryStorage(),
+  storage: bunnyStreamStorage,
   fileFilter,
   limits: { fileSize: MAX_VIDEO_SIZE_MB * 1024 * 1024 },
 });

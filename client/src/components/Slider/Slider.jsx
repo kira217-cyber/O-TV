@@ -118,7 +118,7 @@ const Slider = () => {
                   alt={item.title}
                   draggable={false}
                   loading={index < 2 ? "eager" : "lazy"}
-                  className="block h-full w-full select-none object-cover lg:hidden"
+                  className="block h-full w-full select-none object-cover sm:hidden"
                 />
 
                 {/* Desktop landscape image */}
@@ -127,7 +127,7 @@ const Slider = () => {
                   alt={item.title}
                   draggable={false}
                   loading={index < 2 ? "eager" : "lazy"}
-                  className="hidden h-full w-full select-none object-cover lg:block"
+                  className="hidden h-full w-full select-none object-cover sm:block"
                 />
 
                 {/* Exclusive badge */}
@@ -258,13 +258,19 @@ const Slider = () => {
           }
 
           /*
-           * Mobile:
+           * Phones — the portrait thumbnail is shown here, so the slide is
+           * locked to that image ratio (2:3, e.g. 720x1080) and its height
+           * is derived from its width. Nothing is ever cropped.
+           *
            * Middle slide = 80%
            * Left and right visible area = approximately 10% each
+           * max-width keeps the poster sane on the widest phones, where
+           * 80% of the viewport would otherwise overflow the screen.
            */
           .bioscope-slider .bioscope-slide {
             width: 80%;
-            height: min(119vw, 500px);
+            max-width: 380px;
+            aspect-ratio: 2 / 3;
             opacity: 1;
             filter: none;
             transform: scale(0.965);
@@ -290,17 +296,23 @@ const Slider = () => {
             filter: none;
           }
 
+          /*
+           * From 640px up the landscape thumbnail is shown, so every slide
+           * is a true 16:9 frame (e.g. 1280x720). Only the width changes
+           * per breakpoint — the height always follows from it, which is
+           * what stops the image being cropped on laptops and tablets.
+           */
           @media (min-width: 640px) {
             .bioscope-slider .bioscope-slide {
               width: 76%;
-              height: clamp(400px, 80vw, 570px);
+              max-width: none;
+              aspect-ratio: 16 / 9;
             }
           }
 
           @media (min-width: 768px) {
             .bioscope-slider .bioscope-slide {
               width: 70%;
-              height: clamp(450px, 70vw, 610px);
             }
           }
 
@@ -310,7 +322,6 @@ const Slider = () => {
           @media (min-width: 1024px) {
             .bioscope-slider .bioscope-slide {
               width: 60%;
-              height: clamp(500px, 33.5vw, 645px);
               transform: scale(0.95);
             }
 
@@ -323,7 +334,6 @@ const Slider = () => {
             .bioscope-slider .bioscope-slide {
               width: 59.7%;
               max-width: 1146px;
-              height: 645px;
             }
           }
 

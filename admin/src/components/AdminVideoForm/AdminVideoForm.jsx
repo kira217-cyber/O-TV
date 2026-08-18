@@ -513,8 +513,11 @@ const AdminVideoForm = ({ submitting = false, progress = 0, onSubmit }) => {
             accept="image/png,image/jpeg,image/webp,image/gif"
             guidance={
               <>
-                Recommended <span className="font-bold text-white">1280×720px</span>{" "}
-                (16:9). Max file size: <span className="font-bold text-white">20MB</span>.
+                Use exactly{" "}
+                <span className="font-bold text-white">1080×608px</span> (16:9).
+                Used by the home slider from tablet up, and by every landscape
+                card. Max file size:{" "}
+                <span className="font-bold text-white">20MB</span>.
               </>
             }
             fileName={landscapeFile?.name}
@@ -540,8 +543,10 @@ const AdminVideoForm = ({ submitting = false, progress = 0, onSubmit }) => {
             accept="image/png,image/jpeg,image/webp,image/gif"
             guidance={
               <>
-                Recommended <span className="font-bold text-white">720×1280px</span>{" "}
-                (9:16). Max file size: <span className="font-bold text-white">20MB</span>.
+                Use exactly{" "}
+                <span className="font-bold text-white">320×480px</span> (2:3).
+                Used by the home slider on phones, and by every poster card.
+                Max file size: <span className="font-bold text-white">20MB</span>.
               </>
             }
             fileName={portraitFile?.name}
@@ -554,7 +559,7 @@ const AdminVideoForm = ({ submitting = false, progress = 0, onSubmit }) => {
               <img
                 src={portraitPreview}
                 alt="Portrait thumbnail preview"
-                className="aspect-[9/16] w-full object-cover"
+                className="aspect-[2/3] w-full object-cover"
               />
             </div>
           )}

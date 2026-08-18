@@ -390,9 +390,10 @@ const VideoForm = ({
             guidance={
               <>
                 Recommended{" "}
-                <span className="font-bold text-white">1280×720px</span>{" "}
-                (16:9). Shown on desktop/laptop and as the video player's
-                poster. Max file size:{" "}
+                <span className="font-bold text-white">1080×608px</span>{" "}
+                (16:9), exactly. Used by the home slider from tablet up, on
+                desktop/laptop cards, and as the video player's poster. Max
+                file size:{" "}
                 <span className="font-bold text-white">20MB</span>.
               </>
             }
@@ -421,8 +422,9 @@ const VideoForm = ({
             guidance={
               <>
                 Recommended{" "}
-                <span className="font-bold text-white">720×1280px</span>{" "}
-                (9:16). Shown on mobile card grids. Max file size:{" "}
+                <span className="font-bold text-white">320×480px</span>{" "}
+                (2:3), exactly. Shown on mobile card grids and the home slider
+                on phones. Max file size:{" "}
                 <span className="font-bold text-white">20MB</span>.
               </>
             }
@@ -437,7 +439,7 @@ const VideoForm = ({
               <img
                 src={portraitPreview}
                 alt="Portrait thumbnail preview"
-                className="aspect-[9/16] w-full object-cover"
+                className="aspect-[2/3] w-full object-cover"
               />
             </div>
           )}

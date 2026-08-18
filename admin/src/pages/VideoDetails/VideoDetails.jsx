@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 
 import { api } from "../../api/axios";
+import UploadProgressModal from "../../components/UploadProgressModal/UploadProgressModal";
+import { useUploadProgress } from "../../hooks/useUploadProgress";
 import {
   MATURITY_RATING_OPTIONS,
   CATEGORY_OPTIONS,
@@ -119,6 +121,9 @@ const VideoDetails = () => {
   const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState(0);
+
+  const { upload, start, reportSent, reportStored, complete, fail, reset } =
+    useUploadProgress();
   const [showRejectBox, setShowRejectBox] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [showTrailer, setShowTrailer] = useState(false);
@@ -311,6 +316,7 @@ const VideoDetails = () => {
         );
         bunnyPercent = data?.data?.percent ?? bunnyPercent;
         setProgress((previous) => Math.max(previous, 50 + Math.round(bunnyPercent / 2)));
+        reportStored(bunnyPercent);
       } catch {
         // Non-critical — the bar just won't advance this tick.
       }
@@ -332,16 +338,46 @@ const VideoDetails = () => {
       if (trailerFile) formData.append("trailer", trailerFile);
       formData.append("uploadId", uploadId);
 
-      const { data } = await api.put(`/api/admin/videos/${id}`, formData, {
+      // The server streams a file straight to storage as it arrives, so it
+      // needs the id and exact byte counts before the file part starts — a
+      // form field appended after the file would reach it too late.
+      const uploadQuery = new URLSearchParams({ uploadId });
+      if (videoFile) uploadQuery.set("videoBytes", String(videoFile.size));
+      if (trailerFile) uploadQuery.set("trailerBytes", String(trailerFile.size));
+
+      // Only worth a modal when a file is actually being sent — a
+      // details-only save finishes before it could even render.
+      const sendingFile = Boolean(videoFile || trailerFile);
+      if (sendingFile) {
+        const biggest = videoFile || trailerFile;
+        start({
+          fileName: biggest.name,
+          fileSize: biggest.size,
+          // One leg, not two: the file reaches storage as it is sent, so the
+          // browser's own progress is the whole story.
+          storedBytes: 0,
+        });
+      }
+
+      const { data } = await api.put(`/api/admin/videos/${id}?${uploadQuery}`, formData, {
         onUploadProgress: (event) => {
           if (!event.total) return;
-          const clientPercent = Math.round((event.loaded / event.total) * 100);
-          setProgress((previous) => Math.max(previous, Math.round(clientPercent / 2)));
+          setProgress((previous) =>
+            Math.max(previous, Math.round((event.loaded / event.total) * 50)),
+          );
+          reportSent(event.loaded, event.total);
         },
       });
       const updated = data?.data?.video || data?.video;
 
       setProgress(100);
+
+      if (sendingFile) {
+        complete();
+        await new Promise((resolve) => setTimeout(resolve, 1400));
+        reset();
+      }
+
       setVideo(updated);
       setLandscapeFile(null);
       setLandscapePreview(null);
@@ -353,7 +389,9 @@ const VideoDetails = () => {
       setTrailerPreview(null);
       toast.success("Video updated successfully");
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to update video");
+      const message = error?.response?.data?.message || "Failed to update video";
+      fail(message);
+      toast.error(message);
     } finally {
       clearInterval(pollBunnyProgress);
       setSaving(false);
@@ -681,8 +719,9 @@ const VideoDetails = () => {
                 <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#8b5cf6]" />
                 <span>
                   Recommended{" "}
-                  <span className="font-bold text-white">1280×720px</span>{" "}
-                  (16:9). Also used as the video player's poster.
+                  <span className="font-bold text-white">1080×608px</span>{" "}
+                  (16:9), exactly. Used by the home slider from tablet up, and
+                  as the video player's poster.
                 </span>
               </div>
 
@@ -732,8 +771,9 @@ const VideoDetails = () => {
                 <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#8b5cf6]" />
                 <span>
                   Recommended{" "}
-                  <span className="font-bold text-white">720×1280px</span>{" "}
-                  (9:16). Shown on mobile card grids.
+                  <span className="font-bold text-white">320×480px</span>{" "}
+                  (2:3), exactly. Shown on mobile card grids and the home
+                  slider on phones.
                 </span>
               </div>
 
@@ -744,7 +784,7 @@ const VideoDetails = () => {
                     `${api.defaults.baseURL}${video.thumbnail?.portrait}`
                   }
                   alt={video.title}
-                  className="aspect-[9/16] w-full object-cover"
+                  className="aspect-[2/3] w-full object-cover"
                 />
               </div>
 
@@ -890,6 +930,8 @@ const VideoDetails = () => {
           </button>
         </form>
       </div>
+
+      <UploadProgressModal upload={upload} onClose={reset} />
     </div>
   );
 };

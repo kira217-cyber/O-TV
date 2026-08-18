@@ -5,6 +5,8 @@ import { Pencil } from "lucide-react";
 
 import { api } from "../../api/axios";
 import VideoForm from "../../components/VideoForm/VideoForm";
+import UploadProgressModal from "../../components/UploadProgressModal/UploadProgressModal";
+import { useUploadProgress } from "../../hooks/useUploadProgress";
 
 const EditVideo = () => {
   const { id } = useParams();
@@ -14,6 +16,9 @@ const EditVideo = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [progress, setProgress] = useState(0);
+
+  const { upload, start, reportSent, reportStored, complete, fail, reset } =
+    useUploadProgress();
 
   useEffect(() => {
     const loadVideo = async () => {
@@ -53,6 +58,7 @@ const EditVideo = () => {
         );
         bunnyPercent = data?.data?.percent ?? bunnyPercent;
         setProgress((previous) => Math.max(previous, 50 + Math.round(bunnyPercent / 2)));
+        reportStored(bunnyPercent);
       } catch {
         // Non-critical — the bar just won't advance this tick.
       }
@@ -62,19 +68,57 @@ const EditVideo = () => {
       setSubmitting(true);
       setProgress(0);
 
-      await api.put(`/api/studio/videos/${id}`, formData, {
+      // Only worth a modal when a file is actually being sent — a
+      // details-only edit finishes before it could even render.
+      const videoFile = formData.get("video");
+      const trailerFile = formData.get("trailer");
+      const sendingFile = videoFile instanceof File || trailerFile instanceof File;
+
+      // The server streams a file straight to storage as it arrives, so it
+      // needs the id and exact byte counts before the file part starts — a
+      // form field appended after the file would reach it too late.
+      const uploadQuery = new URLSearchParams({ uploadId });
+      if (videoFile instanceof File) {
+        uploadQuery.set("videoBytes", String(videoFile.size));
+      }
+      if (trailerFile instanceof File) {
+        uploadQuery.set("trailerBytes", String(trailerFile.size));
+      }
+
+      if (sendingFile) {
+        const biggest = videoFile instanceof File ? videoFile : trailerFile;
+        start({
+          fileName: biggest.name,
+          fileSize: biggest.size,
+          // One leg, not two: the file reaches storage as it is sent, so the
+          // browser's own progress is the whole story.
+          storedBytes: 0,
+        });
+      }
+
+      await api.put(`/api/studio/videos/${id}?${uploadQuery}`, formData, {
         onUploadProgress: (event) => {
           if (!event.total) return;
-          const clientPercent = Math.round((event.loaded / event.total) * 100);
-          setProgress((previous) => Math.max(previous, Math.round(clientPercent / 2)));
+          setProgress((previous) =>
+            Math.max(previous, Math.round((event.loaded / event.total) * 50)),
+          );
+          reportSent(event.loaded, event.total);
         },
       });
 
       setProgress(100);
+
+      if (sendingFile) {
+        complete();
+        await new Promise((resolve) => setTimeout(resolve, 1400));
+      }
+
       toast.success("Video updated and sent back for admin review");
       navigate("/my-videos");
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to update video");
+      const message = error?.response?.data?.message || "Failed to update video";
+      fail(message);
+      toast.error(message);
     } finally {
       clearInterval(pollBunnyProgress);
       setSubmitting(false);
@@ -113,7 +157,7 @@ const EditVideo = () => {
       <VideoForm
         mode="edit"
         submitting={submitting}
-        progress={progress}
+        progress={upload.active ? upload.percent : progress}
         onSubmit={handleSubmit}
         initialValues={{
           title: video.title,
@@ -127,6 +171,8 @@ const EditVideo = () => {
           trailerFileLabel: video.trailer ? "current trailer file" : null,
         }}
       />
+
+      <UploadProgressModal upload={upload} onClose={reset} />
     </div>
   );
 };

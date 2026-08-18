@@ -178,11 +178,11 @@ const MyVideos = () => {
                   to={`/watch/${video.id}`}
                   className="group relative block w-full cursor-pointer overflow-hidden bg-black/50"
                 >
-                  {/* Portrait (9:16) on mobile, landscape (16:9) on desktop/laptop */}
+                  {/* Portrait (2:3) on mobile, landscape (16:9) on desktop/laptop */}
                   <img
                     src={`${base}${video.thumbnail?.portrait}`}
                     alt={video.title}
-                    className="aspect-[9/16] w-full object-cover transition group-hover:scale-105 md:hidden"
+                    className="aspect-[2/3] w-full object-cover transition group-hover:scale-105 md:hidden"
                   />
                   <img
                     src={`${base}${video.thumbnail?.landscape}`}

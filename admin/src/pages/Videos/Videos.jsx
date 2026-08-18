@@ -181,11 +181,11 @@ const Videos = () => {
                   className="flex flex-col gap-2 overflow-hidden rounded-[20px] border border-[#8b5cf6]/15 bg-black/30 shadow-xl shadow-black/30 transition hover:border-[#8b5cf6]/40"
                 >
                   <div className="relative w-full overflow-hidden bg-black/50">
-                    {/* Portrait (9:16) on mobile, landscape (16:9) on desktop/laptop */}
+                    {/* Portrait (2:3) on mobile, landscape (16:9) on desktop/laptop */}
                     <img
                       src={`${base}${video.thumbnail?.portrait}`}
                       alt={video.title}
-                      className="aspect-[9/16] h-full w-full object-cover md:hidden"
+                      className="aspect-[2/3] h-full w-full object-cover md:hidden"
                     />
                     <img
                       src={`${base}${video.thumbnail?.landscape}`}

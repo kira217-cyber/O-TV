@@ -10,16 +10,16 @@ import { uploadVideoFields } from "../config/multerVideo.js";
 import { handleUpload } from "../utils/handleUpload.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 import { protectAdmin } from "../middleware/protectAdmin.js";
-import { uploadToBunny, deleteFromBunny } from "../config/bunnyStorage.js";
+import { deleteFromBunny } from "../config/bunnyStorage.js";
+import { discardStreamedUploadsOnFailure } from "../config/bunnyStreamStorage.js";
+import { storeMediaFile } from "../utils/bunnyUpload.js";
 import {
   MAX_THUMBNAIL_SIZE,
   saveThumbnail,
   deleteLocalFile,
-  buildBunnyFileName,
 } from "../utils/videoFiles.js";
 import { publicVideo } from "../utils/videoSerializer.js";
 import {
-  setUploadProgress,
   getUploadProgress,
   clearUploadProgress,
 } from "../utils/uploadProgress.js";
@@ -37,13 +37,14 @@ router.post(
   "/",
   protectAdmin,
   handleUpload(uploadVideoFields),
+  discardStreamedUploadsOnFailure,
   async (req, res) => {
     const files = req.files || {};
     const landscapeFile = files.thumbnailLandscape?.[0];
     const portraitFile = files.thumbnailPortrait?.[0];
     const videoFile = files.video?.[0];
     const trailerFile = files.trailer?.[0];
-    const uploadId = req.body?.uploadId;
+    const uploadId = req.query?.uploadId || req.body?.uploadId;
 
     const rollbackActions = [];
     const rollback = async () => {
@@ -139,27 +140,18 @@ router.post(
       const portraitPath = await saveThumbnail(portraitFile);
       rollbackActions.push(async () => deleteLocalFile(portraitPath));
 
-      const videoFileName = buildBunnyFileName("video", videoFile.originalname);
-      const videoUrl = await uploadToBunny(
-        videoFile.buffer,
-        videoFileName,
-        videoFile.mimetype,
-        uploadId ? (percent) => setUploadProgress(uploadId, percent) : undefined,
+      const { fileName: videoFileName, url: videoUrl } = await storeMediaFile(
+        videoFile,
+        "video",
+        uploadId,
       );
       rollbackActions.push(async () => deleteFromBunny(videoFileName));
 
       let trailerData = { url: null, fileName: null };
 
       if (trailerFile) {
-        const trailerFileName = buildBunnyFileName(
-          "trailer",
-          trailerFile.originalname,
-        );
-        const trailerUrl = await uploadToBunny(
-          trailerFile.buffer,
-          trailerFileName,
-          trailerFile.mimetype,
-        );
+        const { fileName: trailerFileName, url: trailerUrl } =
+          await storeMediaFile(trailerFile, "trailer");
         rollbackActions.push(async () => deleteFromBunny(trailerFileName));
         trailerData = { url: trailerUrl, fileName: trailerFileName };
       }
@@ -353,13 +345,14 @@ router.put(
   "/:id",
   protectAdmin,
   handleUpload(uploadVideoFields),
+  discardStreamedUploadsOnFailure,
   async (req, res) => {
     const files = req.files || {};
     const landscapeFile = files.thumbnailLandscape?.[0];
     const portraitFile = files.thumbnailPortrait?.[0];
     const videoFile = files.video?.[0];
     const trailerFile = files.trailer?.[0];
-    const uploadId = req.body?.uploadId;
+    const uploadId = req.query?.uploadId || req.body?.uploadId;
 
     const rollbackActions = [];
     const rollback = async () => {
@@ -423,31 +416,16 @@ router.put(
       }
 
       if (videoFile) {
-        const newVideoFileName = buildBunnyFileName(
-          "video",
-          videoFile.originalname,
-        );
-        const newVideoUrl = await uploadToBunny(
-          videoFile.buffer,
-          newVideoFileName,
-          videoFile.mimetype,
-          uploadId ? (percent) => setUploadProgress(uploadId, percent) : undefined,
-        );
+        const { fileName: newVideoFileName, url: newVideoUrl } =
+          await storeMediaFile(videoFile, "video", uploadId);
         rollbackActions.push(async () => deleteFromBunny(newVideoFileName));
         oldVideoFileName = video.video?.fileName;
         video.video = { url: newVideoUrl, fileName: newVideoFileName };
       }
 
       if (trailerFile) {
-        const newTrailerFileName = buildBunnyFileName(
-          "trailer",
-          trailerFile.originalname,
-        );
-        const newTrailerUrl = await uploadToBunny(
-          trailerFile.buffer,
-          newTrailerFileName,
-          trailerFile.mimetype,
-        );
+        const { fileName: newTrailerFileName, url: newTrailerUrl } =
+          await storeMediaFile(trailerFile, "trailer");
         rollbackActions.push(async () => deleteFromBunny(newTrailerFileName));
         oldTrailerFileName = video.trailer?.fileName;
         video.trailer = { url: newTrailerUrl, fileName: newTrailerFileName };

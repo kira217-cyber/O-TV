@@ -118,6 +118,140 @@ export const uploadToBunny = (buffer, fileName, contentType, onProgress) =>
     }
   });
 
+// Streams a file straight through to Bunny instead of waiting for the whole
+// thing to arrive first.
+//
+// The buffered `uploadToBunny` above can only start once the browser has
+// finished sending, so an upload costs the client -> server time *plus* the
+// server -> Bunny time, one after the other. Piping the incoming request
+// body directly into the Bunny request overlaps them: the file lands in
+// storage moments after the last byte leaves the browser, roughly halving
+// the wait, and there is only ever one progress figure to report instead of
+// two legs at different speeds.
+//
+// `contentLength` must be the exact byte count — Bunny needs it up front,
+// and Node will otherwise sit waiting for bytes that never come. Callers
+// take it from the browser's own File.size, and a mismatch is caught here
+// rather than left to hang.
+//
+// Backpressure is honoured by pausing the source whenever the socket is
+// full, so progress tracks what Bunny has actually accepted rather than
+// what Node has buffered.
+export const uploadStreamToBunny = (
+  source,
+  fileName,
+  contentType,
+  contentLength,
+  onProgress,
+) =>
+  new Promise((resolve, reject) => {
+    const { accessKey } = config();
+
+    if (!accessKey) {
+      reject(
+        new Error(
+          "Bunny storage is not configured (missing BUNNY_STORAGE_ACCESS_KEY)",
+        ),
+      );
+      return;
+    }
+
+    if (!Number.isFinite(contentLength) || contentLength <= 0) {
+      reject(new Error("A valid file size is required to stream to storage"));
+      return;
+    }
+
+    const target = new URL(buildStorageUrl(fileName));
+
+    let sent = 0;
+    let settled = false;
+
+    const finish = (error, value) => {
+      if (settled) return;
+      settled = true;
+      source.removeListener("data", onData);
+      source.removeListener("end", onEnd);
+      source.removeListener("error", onSourceError);
+      if (error) reject(error);
+      else resolve(value);
+    };
+
+    const req = https.request(
+      {
+        hostname: target.hostname,
+        // Honours a port in BUNNY_STORAGE_HOST; falls through to 443 when
+        // there isn't one, which is the normal case.
+        port: target.port || undefined,
+        path: `${target.pathname}${target.search}`,
+        method: "PUT",
+        headers: {
+          AccessKey: accessKey,
+          "Content-Type": contentType || "application/octet-stream",
+          "Content-Length": contentLength,
+        },
+      },
+      (res) => {
+        let body = "";
+        res.on("data", (chunk) => {
+          body += chunk;
+        });
+        res.on("end", () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            onProgress?.(100);
+            finish(null, getBunnyCdnUrl(fileName));
+          } else {
+            finish(
+              new Error(
+                `Bunny storage upload failed (${res.statusCode}): ${body || res.statusMessage}`,
+              ),
+            );
+          }
+        });
+      },
+    );
+
+    req.on("error", (error) =>
+      finish(new Error(`Bunny storage upload failed: ${error.message}`)),
+    );
+
+    const onData = (chunk) => {
+      sent += chunk.length;
+
+      if (sent > contentLength) {
+        req.destroy();
+        finish(new Error("Upload was larger than the size the browser declared"));
+        return;
+      }
+
+      const ok = req.write(chunk);
+      onProgress?.(Math.min(99, Math.round((sent / contentLength) * 100)));
+
+      if (!ok) {
+        source.pause();
+        req.once("drain", () => source.resume());
+      }
+    };
+
+    const onEnd = () => {
+      if (sent !== contentLength) {
+        req.destroy();
+        finish(new Error("Upload ended before the whole file arrived"));
+        return;
+      }
+
+      req.end();
+    };
+
+    const onSourceError = (error) => {
+      req.destroy();
+      finish(new Error(`Upload stream failed: ${error.message}`));
+    };
+
+    source.on("data", onData);
+    source.on("end", onEnd);
+    source.on("error", onSourceError);
+  });
+
 // Best-effort cleanup — callers never await this to fail the request over
 // it (e.g. during a video delete/replace), but "best-effort" must still
 // mean "we'd know if it didn't work": `fetch` only rejects on a
